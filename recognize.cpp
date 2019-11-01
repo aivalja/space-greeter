@@ -22,6 +22,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 using namespace cv;
 using namespace cv::face;
 using namespace std;
@@ -141,22 +142,29 @@ int main(int argc, const char *argv[]) {
     // test image:
     int correct = 0;
     int wrong = 0;
+    double elapsed = 0;
     for (int i = 0; i < test_images.size(); i++)
     {
         int predictedLabel = -1;
         double confidence = 0.0;
+        auto start = std::chrono::high_resolution_clock::now();
         predictedLabel = model->predict(test_images[i]);
         model->predict(test_images[i], predictedLabel, confidence);
-        string result_message = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f", predictedLabel, test_labels[i], confidence);
+        auto finish = std::chrono::high_resolution_clock::now();
+        double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count())/1000000.0;
+        
+        string result_message = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs", predictedLabel, test_labels[i], confidence, duration);
         if(predictedLabel == test_labels[i]){
             correct++;
         } else {
             wrong++;
         }
+        elapsed += duration;
         cout << result_message << endl;
     }
     double accuracy = 1.0*correct/(correct + wrong)*100;
-    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%", correct, wrong, accuracy) << endl;
+    double average_fps = test_images.size()/elapsed;
+    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f% / FPS: %.2f", correct, wrong, accuracy, average_fps) << endl;
     
     //int predictedLabel = model->predict(testSample);
     //
