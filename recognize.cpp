@@ -60,21 +60,25 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
     }
 }
 int main(int argc, const char *argv[]) {
+    cout << "Hej" << endl;
     // Check for valid command line arguments, print usage
     // if no arguments were given.
-    if (argc < 2) {
-        cout << "usage: " << argv[0] << " <csv.ext> <output_folder> " << endl;
+    if (argc < 3) {
+        cout << "usage: " << argv[0] << " <train_csv.ext> <test_csv.ext> <output_folder> " << endl;
         exit(1);
     }
     string output_folder = ".";
-    if (argc == 3) {
-        output_folder = string(argv[2]);
+    if (argc == 4) {
+        output_folder = string(argv[3]);
     }
     // Get the path to your CSV.
     string fn_csv = string(argv[1]);
+    string fn_test_csv = string(argv[2]);
     // These vectors hold the images and corresponding labels.
     vector<Mat> images;
     vector<int> labels;
+    vector<Mat> test_images;
+    vector<int> test_labels;
     // Read in the data. This can fail if no valid
     // input filename is given.
     try {
@@ -84,9 +88,17 @@ int main(int argc, const char *argv[]) {
         // nothing more we can do
         exit(1);
     }
+    // Read in the test data
+    try {
+        read_csv(fn_test_csv, test_images, test_labels);
+    } catch (const cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_test_csv << "\". Reason: " << e.msg << endl;
+        // nothing more we can do
+        exit(1);
+    }
     // Quit if there are not enough images for this demo.
-    if(images.size() <= 1) {
-        string error_message = "This demo needs at least 2 images to work. Please add more images to your data set!";
+    if(images.size() < 1) {
+        string error_message = "This demo needs at least 1 image to work. Please add more images to your data set!";
         CV_Error(Error::StsError, error_message);
     }
     // Get the height from the first image. We'll need this
@@ -98,10 +110,12 @@ int main(int argc, const char *argv[]) {
     // done, so that the training data (which we learn the
     // cv::BasicFaceRecognizer on) and the test data we test
     // the model with, do not overlap.
-    Mat testSample = images[images.size() - 1];
-    int testLabel = labels[labels.size() - 1];
-    images.pop_back();
-    labels.pop_back();
+    
+    // Mat testSample = test_images[test_images.size() - 1];
+    // int testLabel = test_labels[test_labels.size() - 1];
+    // test_images.pop_back();
+    // test_labels.pop_back();
+    
     // The following lines create an Eigenfaces model for
     // face recognition and train it with the images and
     // labels read from the given CSV file.
@@ -125,7 +139,26 @@ int main(int argc, const char *argv[]) {
     model->train(images, labels);
     // The following line predicts the label of a given
     // test image:
-    int predictedLabel = model->predict(testSample);
+    int correct = 0;
+    int wrong = 0;
+    for (int i = 0; i < test_images.size(); i++)
+    {
+        int predictedLabel = -1;
+        double confidence = 0.0;
+        predictedLabel = model->predict(test_images[i]);
+        model->predict(test_images[i], predictedLabel, confidence);
+        string result_message = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f", predictedLabel, test_labels[i], confidence);
+        if(predictedLabel == test_labels[i]){
+            correct++;
+        } else {
+            wrong++;
+        }
+        cout << result_message << endl;
+    }
+    double accuracy = 1.0*correct/(correct + wrong)*100;
+    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%", correct, wrong, accuracy) << endl;
+    
+    //int predictedLabel = model->predict(testSample);
     //
     // To get the confidence of a prediction call the model with:
     //
@@ -133,8 +166,8 @@ int main(int argc, const char *argv[]) {
     //      double confidence = 0.0;
     //      model->predict(testSample, predictedLabel, confidence);
     //
-    string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
-    cout << result_message << endl;
+    //string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
+    //cout << result_message << endl;
     // Here is how to get the eigenvalues of this Eigenfaces model:
     Mat eigenvalues = model->getEigenValues();
     // And we can do the same to display the Eigenvectors (read Eigenfaces):
