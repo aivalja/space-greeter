@@ -136,7 +136,7 @@ int main(int argc, const char *argv[]) {
     //
     //      EigenFaceRecognizer::create(0, 123.0);
     //
-    Ptr<EigenFaceRecognizer> model = EigenFaceRecognizer::create();
+    Ptr<EigenFaceRecognizer> model = EigenFaceRecognizer::create(200);
     model->train(images, labels);
     // The following line predicts the label of a given
     // test image:
