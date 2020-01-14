@@ -1,6 +1,6 @@
 #Compiled files
 *.o
-*.tmp
+.face.txt
 
 #Output files
 output/
