@@ -3,6 +3,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/videoio.hpp"
 #include <iostream>
+#include <fstream>
 using namespace std;
 using namespace cv;
 void detectAndDisplay( Mat frame );
@@ -49,6 +50,7 @@ int main( int argc, const char** argv )
     }
     return 0;
 }
+
 void detectAndDisplay( Mat frame )
 {
     Mat frame_gray;
@@ -57,6 +59,11 @@ void detectAndDisplay( Mat frame )
     //-- Detect faces
     std::vector<Rect> faces;
     face_cascade.detectMultiScale( frame_gray, faces );
+    // TODO -- make this faster, slow as... flower currently
+    ofstream face_file;
+    face_file.open(".face.txt");
+    face_file << faces.size();
+    face_file.close();
     for ( size_t i = 0; i < faces.size(); i++ )
     {
         Point center( faces[i].x + faces[i].width/2, faces[i].y + faces[i].height/2 );
