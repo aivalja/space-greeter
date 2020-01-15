@@ -11,3 +11,6 @@ python3 main.py
 ```
 Keep detect.o running while running main.py
 
+TODO:
+Create a script for compiling everything correctly
+Face is detected as a square, it might decrease the classification accuracy 

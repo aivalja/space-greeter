@@ -54,6 +54,7 @@ int main( int argc, const char** argv )
 void detectAndDisplay( Mat frame )
 {
     Mat frame_gray;
+    Mat face_cropped;
     cvtColor( frame, frame_gray, COLOR_BGR2GRAY );
     equalizeHist( frame_gray, frame_gray );
     //-- Detect faces
@@ -70,8 +71,14 @@ void detectAndDisplay( Mat frame )
         rectangle( frame, Point(faces[i].x, faces[i].y), Point( faces[i].x+faces[i].width, faces[i].y+faces[i].height ), Scalar( 255, 0, 255 ), 4 );
         //rectangle( frame, Point(100,100), Point(510, 128), Scalar(0, 255, 0), 3);
         Mat faceROI = frame_gray( faces[i] );
+        Rect crop(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
+        face_cropped = frame(crop);
         
     }
     //-- Show what you got
     imshow( "Capture - Face detection", frame );
+    //-- If face present, show it
+    if(faces.size()){
+        imshow( "Capture - Face detection - Face", face_cropped );
+    }
 }
