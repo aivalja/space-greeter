@@ -136,8 +136,15 @@ int main(int argc, const char *argv[]) {
     //
     //      EigenFaceRecognizer::create(0, 123.0);
     //
-    Ptr<EigenFaceRecognizer> model = EigenFaceRecognizer::create(200);
+    // We have to tweak parametrest to improe performance
+    // Default values are radius=1, neighbors=8, grid_x=8, grid_y=8
+    // Neighbours has the greatest impact on performance, apparently 3 can be used
+    // without decreasing recognizing accuracy
+    Ptr<FaceRecognizer> model = LBPHFaceRecognizer::create(1,4,8,8);
     model->train(images, labels);
+    // Save the trained data for later
+    //model->save("faces.yml");
+    
     // The following line predicts the label of a given
     // test image:
     int correct = 0;
@@ -177,50 +184,50 @@ int main(int argc, const char *argv[]) {
     //string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
     //cout << result_message << endl;
     // Here is how to get the eigenvalues of this Eigenfaces model:
-    Mat eigenvalues = model->getEigenValues();
-    // And we can do the same to display the Eigenvectors (read Eigenfaces):
-    Mat W = model->getEigenVectors();
-    // Get the sample mean from the training data
-    Mat mean = model->getMean();
-    // Display or save:
-    if(argc == 2) {
-        imshow("mean", norm_0_255(mean.reshape(1, images[0].rows)));
-    } else {
-        imwrite(format("%s/mean.png", output_folder.c_str()), norm_0_255(mean.reshape(1, images[0].rows)));
-    }
-    // Display or save the Eigenfaces:
-    for (int i = 0; i < min(10, W.cols); i++) {
-        string msg = format("Eigenvalue #%d = %.5f", i, eigenvalues.at<double>(i));
-        cout << msg << endl;
-        // get eigenvector #i
-        Mat ev = W.col(i).clone();
-        // Reshape to original size & normalize to [0...255] for imshow.
-        Mat grayscale = norm_0_255(ev.reshape(1, height));
-        // Show the image & apply a Jet colormap for better sensing.
-        Mat cgrayscale;
-        applyColorMap(grayscale, cgrayscale, COLORMAP_JET);
-        // Display or save:
-        if(argc == 2) {
-            imshow(format("eigenface_%d", i), cgrayscale);
-        } else {
-            imwrite(format("%s/eigenface_%d.png", output_folder.c_str(), i), norm_0_255(cgrayscale));
-        }
-    }
-    // Display or save the image reconstruction at some predefined steps:
-    for(int num_components = min(W.cols, 10); num_components < min(W.cols, 300); num_components+=15) {
-        // slice the eigenvectors from the model
-        Mat evs = Mat(W, Range::all(), Range(0, num_components));
-        Mat projection = LDA::subspaceProject(evs, mean, images[0].reshape(1,1));
-        Mat reconstruction = LDA::subspaceReconstruct(evs, mean, projection);
-        // Normalize the result:
-        reconstruction = norm_0_255(reconstruction.reshape(1, images[0].rows));
-        // Display or save:
-        if(argc == 2) {
-            imshow(format("eigenface_reconstruction_%d", num_components), reconstruction);
-        } else {
-            imwrite(format("%s/eigenface_reconstruction_%d.png", output_folder.c_str(), num_components), reconstruction);
-        }
-    }
+    //-- Mat eigenvalues = model->getEigenValues();
+    //-- // And we can do the same to display the Eigenvectors (read Eigenfaces):
+    //-- Mat W = model->getEigenVectors();
+    //-- // Get the sample mean from the training data
+    //-- Mat mean = model->getMean();
+    //-- // Display or save:
+    //-- if(argc == 2) {
+    //--     imshow("mean", norm_0_255(mean.reshape(1, images[0].rows)));
+    //-- } else {
+    //--     imwrite(format("%s/mean.png", output_folder.c_str()), norm_0_255(mean.reshape(1, images[0].rows)));
+    //-- }
+    //-- // Display or save the Eigenfaces:
+    //-- for (int i = 0; i < min(10, W.cols); i++) {
+    //--     string msg = format("Eigenvalue #%d = %.5f", i, eigenvalues.at<double>(i));
+    //--     cout << msg << endl;
+    //--     // get eigenvector #i
+    //--     Mat ev = W.col(i).clone();
+    //--     // Reshape to original size & normalize to [0...255] for imshow.
+    //--     Mat grayscale = norm_0_255(ev.reshape(1, height));
+    //--     // Show the image & apply a Jet colormap for better sensing.
+    //--     Mat cgrayscale;
+    //--     applyColorMap(grayscale, cgrayscale, COLORMAP_JET);
+    //--     // Display or save:
+    //--     if(argc == 2) {
+    //--         imshow(format("eigenface_%d", i), cgrayscale);
+    //--     } else {
+    //--         imwrite(format("%s/eigenface_%d.png", output_folder.c_str(), i), norm_0_255(cgrayscale));
+    //--     }
+    //-- }
+    //-- // Display or save the image reconstruction at some predefined steps:
+    //-- for(int num_components = min(W.cols, 10); num_components < min(W.cols, 300); num_components+=15) {
+    //--     // slice the eigenvectors from the model
+    //--     Mat evs = Mat(W, Range::all(), Range(0, num_components));
+    //--     Mat projection = LDA::subspaceProject(evs, mean, images[0].reshape(1,1));
+    //--     Mat reconstruction = LDA::subspaceReconstruct(evs, mean, projection);
+    //--     // Normalize the result:
+    //--     reconstruction = norm_0_255(reconstruction.reshape(1, images[0].rows));
+    //--     // Display or save:
+    //--     if(argc == 2) {
+    //--         imshow(format("eigenface_reconstruction_%d", num_components), reconstruction);
+    //--     } else {
+    //--         imwrite(format("%s/eigenface_reconstruction_%d.png", output_folder.c_str(), num_components), reconstruction);
+    //--     }
+    //-- }
     // Display if we are not writing to an output folder:
     if(argc == 2) {
         waitKey(0);
