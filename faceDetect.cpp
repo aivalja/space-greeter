@@ -2,9 +2,16 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/videoio.hpp"
+#include "opencv2/core.hpp"
+#include "opencv2/face.hpp"
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <chrono>
 using namespace std;
 using namespace cv;
+using namespace cv::face;
+
 static void help()
 {
     cout << "\nThis program demonstrates the use of cv::CascadeClassifier class to detect objects (Face + eyes). You can use Haar or LBP features.\n"
@@ -21,13 +28,32 @@ static void help()
             "During execution:\n\tHit any key to quit.\n"
             "\tUsing OpenCV version " << CV_VERSION << "\n" << endl;
 }
+
 void detectAndDraw( Mat& img, CascadeClassifier& cascade,
                     CascadeClassifier& nestedCascade,
                     double scale, bool tryflip );
+
+static void read_csv( const string& filename, vector<Mat>& images,
+                      vector<int>& labels, char separator);
+
+static void load_model();
+
+static void save_model();
+
+static void update_model(Mat image, int label);
+
+static int predict_face(Mat image);
+
+static double precit_confidence(Mat image, int predictedLabel);
+
+static void test();
+
+Ptr<FaceRecognizer> model;
 string cascadeName;
 string nestedCascadeName;
-int main( int argc, const char** argv )
-{
+string model_file = "faces.yml";
+
+int main( int argc, const char** argv ){
     VideoCapture capture;
     Mat frame, image;
     string inputName;
@@ -45,6 +71,10 @@ int main( int argc, const char** argv )
         help();
         return 0;
     }
+
+    //Testing purposes
+    test();
+
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
     scale = parser.get<double>("scale");
@@ -144,10 +174,10 @@ int main( int argc, const char** argv )
     }
     return 0;
 }
+
 void detectAndDraw( Mat& img, CascadeClassifier& cascade,
                     CascadeClassifier& nestedCascade,
-                    double scale, bool tryflip )
-{
+                    double scale, bool tryflip ) {
     double t = 0;
     vector<Rect> faces, faces2;
     const static Scalar colors[] =
@@ -167,6 +197,7 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
     resize( gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT );
     equalizeHist( smallImg, smallImg );
     t = (double)getTickCount();
+    
     cascade.detectMultiScale( smallImg, faces,
         1.1, 2, 0
         //|CASCADE_FIND_BIGGEST_OBJECT
@@ -189,6 +220,8 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
     }
     t = (double)getTickCount() - t;
     printf( "detection time = %g ms\n", t*1000/getTickFrequency());
+    Mat clean_img;
+    img.copyTo(clean_img);
     for ( size_t i = 0; i < faces.size(); i++ )
     {
         Rect r = faces[i];
@@ -196,19 +229,18 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
         vector<Rect> nestedObjects;
         Point center;
         Scalar color = colors[i%8];
-        int radius;
-        double aspect_ratio = (double)r.width/r.height;
-        if( 0.75 < aspect_ratio && aspect_ratio < 1.3 )
-        {
-            center.x = cvRound((r.x + r.width*0.5)*scale);
-            center.y = cvRound((r.y + r.height*0.5)*scale);
-            radius = cvRound((r.width + r.height)*0.25*scale);
-            circle( img, center, radius, color, 3, 8, 0 );
-        }
-        else
-            rectangle( img, Point(cvRound(r.x*scale), cvRound(r.y*scale)),
-                       Point(cvRound((r.x + r.width-1)*scale), cvRound((r.y + r.height-1)*scale)),
-                       color, 3, 8, 0);
+
+        Mat cropped_face(clean_img, Rect(cvRound(r.x*scale),cvRound(r.y*scale),r.width*scale-1, r.height*scale-1));
+        // This is what we want to give to recognition software
+        imshow("Face" + std::to_string(i), cropped_face);
+        
+
+        rectangle( img, Point(cvRound(r.x*scale), cvRound(r.y*scale)),
+                   Point(cvRound((r.x + r.width-1)*scale), cvRound((r.y + r.height-1)*scale)),
+                   color, 3, 8, 0);
+        
+        // This part can be used to detect objects (for example eyes) inside the objects
+        /*
         if( nestedCascade.empty() )
             continue;
         smallImgROI = smallImg( r );
@@ -227,6 +259,122 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
             radius = cvRound((nr.width + nr.height)*0.25*scale);
             circle( img, center, radius, color, 3, 8, 0 );
         }
+        */
     }
     imshow( "result", img );
+}
+
+
+static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
+    std::ifstream file(filename.c_str(), ifstream::in);
+    if (!file) {
+        string error_message = "No valid input file was given, please check the given filename.";
+        CV_Error(Error::StsBadArg, error_message);
+    }
+    string line, path, classlabel;
+    while (getline(file, line)) {
+        stringstream liness(line);
+        getline(liness, path, separator);
+        getline(liness, classlabel);
+        if(!path.empty() && !classlabel.empty()) {
+            images.push_back(imread(path, 0));
+            labels.push_back(atoi(classlabel.c_str()));
+        }
+    }
+}
+
+static void load_model() {
+    // Check if exists already, if so, load it and do not create new
+    model = LBPHFaceRecognizer::create(1,4,8,8);
+}
+
+static void save_model() {
+    model->save(model_file);
+}
+
+static void update_model(Mat image, int label){
+    vector<Mat> new_image;
+    vector<int> new_label;
+    new_image.push_back(image);
+    new_label.push_back(label);
+    model->update(new_image,new_label);
+}
+
+static int predict_face(Mat image){
+    return model->predict(image);
+}
+
+static double predict_confidence(Mat image, int predictedLabel){
+    double confidence;
+    model->predict(image, predictedLabel, confidence);
+    return confidence;
+}
+
+// For teting purposes, I bet you didn't guess that
+static void test(){
+    // Get the path to your CSV.
+    string fn_csv = "train.csv";
+    string fn_test_csv = "test.csv";
+    // These vectors hold the images and corresponding labels.
+    vector<Mat> images;
+    vector<int> labels;
+    vector<Mat> test_images;
+    vector<int> test_labels;
+    // Read in the data. This can fail if no valid
+    // input filename is given.
+    try {
+        read_csv(fn_csv, images, labels);
+    } catch (const cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
+        // nothing more we can do
+        exit(1);
+    }
+    // Read in the test data
+    try {
+        read_csv(fn_test_csv, test_images, test_labels);
+    } catch (const cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_test_csv << "\". Reason: " << e.msg << endl;
+        // nothing more we can do
+        exit(1);
+    }
+    // Quit if there are not enough images for this demo.
+    if(images.size() < 1) {
+        string error_message = "This demo needs at least 1 image to work. Please add more images to your data set!";
+        CV_Error(Error::StsError, error_message);
+    }
+    // Get the height from the first image. We'll need this
+    // later in code to reshape the images to their original
+    // size:
+    int height = images[0].rows;
+
+    load_model();
+    for (int i = 0; i < images.size(); i++){
+        update_model(images[i], labels[i]);
+    }
+    int correct = 0;
+    int wrong = 0;
+    double elapsed = 0;
+    for (int i = 0; i < test_images.size(); i++)
+    {
+        int predictedLabel = -1;
+        double confidence = 0.0;
+        auto start = std::chrono::high_resolution_clock::now();
+        predictedLabel = predict_face(test_images[i]);
+        confidence = predict_confidence(test_images[i], predictedLabel);
+        auto finish = std::chrono::high_resolution_clock::now();
+        double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count())/1000000.0;
+        
+        string result_message = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs", predictedLabel, test_labels[i], confidence, duration);
+        if(predictedLabel == test_labels[i]){
+            correct++;
+        } else {
+            wrong++;
+        }
+        elapsed += duration;
+        cout << result_message << endl;
+    }
+    double accuracy = 1.0*correct/(correct + wrong)*100;
+    double average_fps = test_images.size()/elapsed;
+    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f% / FPS: %.2f", correct, wrong, accuracy, average_fps) << endl;
+    
 }
