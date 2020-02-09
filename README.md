@@ -12,3 +12,5 @@ g++ recognize.cpp `pkg-config opencv4 --cflags --libs` -g -o main.o
 ```
 recognize.cpp is now obsolete, all functionality has been transferred to faceDetect.cpp
 
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄHHHADKFLJKDSJ
+The images should be mat:s, not Rect:s. So we have to redo multiple functions

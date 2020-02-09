@@ -29,9 +29,12 @@ static void help()
             "\tUsing OpenCV version " << CV_VERSION << "\n" << endl;
 }
 
-void detectAndDraw( Mat& img, CascadeClassifier& cascade,
+ 
+vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
                     CascadeClassifier& nestedCascade,
                     double scale, bool tryflip );
+
+Rect getLargestImage( vector<Rect> images);
 
 static void read_csv( const string& filename, vector<Mat>& images,
                       vector<int>& labels, char separator);
@@ -73,7 +76,9 @@ int main( int argc, const char** argv ){
     }
 
     //Testing purposes
-    test();
+    //test();
+
+    load_model();
 
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
@@ -129,7 +134,15 @@ int main( int argc, const char** argv ){
             detectAndDraw( frame1, cascade, nestedCascade, scale, tryflip );
             char c = (char)waitKey(10);
             if( c == 27 || c == 'q' || c == 'Q' )
+            {
                 break;
+            }
+            else if( 47 < c && c < 58) // if number is pressed
+            {
+                vector<Rect> images = detectAndDraw( frame1, cascade, nestedCascade, scale, tryflip );
+                Rect face = getLargestImage(images);
+                //update_model()
+            }
         }
     }
     else
@@ -175,7 +188,7 @@ int main( int argc, const char** argv ){
     return 0;
 }
 
-void detectAndDraw( Mat& img, CascadeClassifier& cascade,
+vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
                     CascadeClassifier& nestedCascade,
                     double scale, bool tryflip ) {
     double t = 0;
@@ -219,9 +232,11 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
         }
     }
     t = (double)getTickCount() - t;
-    printf( "detection time = %g ms\n", t*1000/getTickFrequency());
+    // printf( "detection time = %g ms\n", t*1000/getTickFrequency());
+
     Mat clean_img;
     img.copyTo(clean_img);
+    Rect largestFace = getLargestImage(faces);
     for ( size_t i = 0; i < faces.size(); i++ )
     {
         Rect r = faces[i];
@@ -232,6 +247,9 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
 
         Mat cropped_face(clean_img, Rect(cvRound(r.x*scale),cvRound(r.y*scale),r.width*scale-1, r.height*scale-1));
         // This is what we want to give to recognition software
+        if(faces[i] == largestFace){
+            imshow("Largest face", cropped_face);
+        }
         imshow("Face" + std::to_string(i), cropped_face);
         
 
@@ -262,8 +280,25 @@ void detectAndDraw( Mat& img, CascadeClassifier& cascade,
         */
     }
     imshow( "result", img );
+    return faces;
 }
 
+Rect getLargestImage( vector<Rect> images){
+    Rect largestRect(0,0,0,0);
+    for(size_t i = 0; i < images.size(); ++i){
+        Rect rect = images[i];
+        if(rect.width > largestRect.width){
+            largestRect = rect;
+        }
+    }
+    return largestRect;
+}
+
+Mat prepareImage(Rect image){
+    Mat processed_img;
+    image.copyTo(processed_img);
+    return processed_img;
+}
 
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
     std::ifstream file(filename.c_str(), ifstream::in);
@@ -284,8 +319,8 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 }
 
 static void load_model() {
-    // Check if exists already, if so, load it and do not create new
-    model = LBPHFaceRecognizer::create(1,4,8,8);
+    // TODO: Check if exists already, if so, load it and do not create new
+    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
 }
 
 static void save_model() {
@@ -375,6 +410,6 @@ static void test(){
     }
     double accuracy = 1.0*correct/(correct + wrong)*100;
     double average_fps = test_images.size()/elapsed;
-    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f% / FPS: %.2f", correct, wrong, accuracy, average_fps) << endl;
+    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, average_fps) << endl;
     
 }

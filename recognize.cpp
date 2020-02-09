@@ -23,6 +23,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+
 using namespace cv;
 using namespace cv::face;
 using namespace std;
@@ -43,6 +44,7 @@ static Mat norm_0_255(InputArray _src) {
     }
     return dst;
 }
+
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
     std::ifstream file(filename.c_str(), ifstream::in);
     if (!file) {
@@ -60,6 +62,8 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
         }
     }
 }
+
+
 int main(int argc, const char *argv[]) {
     cout << "Hej" << endl;
     // Check for valid command line arguments, print usage
@@ -136,14 +140,21 @@ int main(int argc, const char *argv[]) {
     //
     //      EigenFaceRecognizer::create(0, 123.0);
     //
-    // We have to tweak parametrest to improe performance
+    // We have to tweak parametrest to improve performance
     // Default values are radius=1, neighbors=8, grid_x=8, grid_y=8
     // Neighbours has the greatest impact on performance, apparently 3 can be used
     // without decreasing recognizing accuracy
-    Ptr<FaceRecognizer> model = LBPHFaceRecognizer::create(1,4,8,8);
-    model->train(images, labels);
+    Ptr<FaceRecognizer> model = LBPHFaceRecognizer::create(1,4,8,8);  
+    for (int i = 0; i < images.size(); i++){
+        vector<Mat> new_image;
+        vector<int> new_label;
+        new_image.push_back(images[i]);
+        new_label.push_back(labels[i]);
+        model->update(new_image,new_label);
+    }
+    // model->train(images, labels);
     // Save the trained data for later
-    //model->save("faces.yml");
+    // model->save("faces.yml");
     
     // The following line predicts the label of a given
     // test image:
