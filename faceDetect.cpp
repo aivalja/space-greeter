@@ -34,7 +34,7 @@ vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
                     CascadeClassifier& nestedCascade,
                     double scale, bool tryflip );
 
-Rect getLargestImage( vector<Rect> images);
+Rect getLargestRect( vector<Rect> images);
 
 static void read_csv( const string& filename, vector<Mat>& images,
                       vector<int>& labels, char separator);
@@ -47,7 +47,9 @@ static void update_model(Mat image, int label);
 
 static int predict_face(Mat image);
 
-static double precit_confidence(Mat image, int predictedLabel);
+static double predict_confidence(Mat image, int predictedLabel);
+
+static Mat prepareImage(Mat image);
 
 static void test();
 
@@ -131,7 +133,17 @@ int main( int argc, const char** argv ){
             if( frame.empty() )
                 break;
             Mat frame1 = frame.clone();
-            detectAndDraw( frame1, cascade, nestedCascade, scale, tryflip );
+            Mat largestFace;
+            vector<Rect> images = detectAndDraw( frame1, cascade, nestedCascade, scale, tryflip );
+            Rect largestRect = getLargestRect(images);
+            frame1.copyTo(largestFace);
+            if(largestRect.width <= 0){
+                continue;
+            }
+            //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
+            //cout << data << endl;
+            Mat cropped_face(largestFace, Rect(cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1));
+            
             char c = (char)waitKey(10);
             if( c == 27 || c == 'q' || c == 'Q' )
             {
@@ -139,9 +151,36 @@ int main( int argc, const char** argv ){
             }
             else if( 47 < c && c < 58) // if number is pressed
             {
-                vector<Rect> images = detectAndDraw( frame1, cascade, nestedCascade, scale, tryflip );
-                Rect face = getLargestImage(images);
-                //update_model()
+                
+                int id = c - 48; // convert ascii to numbers
+                Mat processed_image = prepareImage(cropped_face);
+                imshow("The face that would we teached", cropped_face);
+                imshow("Processed version", processed_image);
+                cout << "Teach this with id " << to_string(id) << "?" << endl;
+                // Wait for the user to confirm the teaching, if space is pressed tech, otherwise discard
+                char c_2 = (char)waitKey(0);
+                if( c_2 == 32){
+                    cout << "Teach face with id " << to_string(id) << endl;
+                    update_model(processed_image, id); 
+                }
+                else
+                {
+                    cout << "Discarded" << endl;
+                }
+                
+                
+            }
+            else if( c == 100) // letter d
+            {
+                //vector<int> labels = model->getLabelsByString("1");
+                //cout << "Model: " << labels <<endl;
+                // Detect who the person is
+                Mat processed_image = prepareImage(cropped_face);
+                int id = -1;
+                double confidence = 0.0;
+                model ->predict(processed_image, id, confidence);
+                string result_message = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
+                cout << result_message << endl;
             }
         }
     }
@@ -234,9 +273,10 @@ vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
     t = (double)getTickCount() - t;
     // printf( "detection time = %g ms\n", t*1000/getTickFrequency());
 
-    Mat clean_img;
+    Mat clean_img, largestFace;
     img.copyTo(clean_img);
-    Rect largestFace = getLargestImage(faces);
+    Rect largestRect = getLargestRect(faces);
+
     for ( size_t i = 0; i < faces.size(); i++ )
     {
         Rect r = faces[i];
@@ -247,10 +287,11 @@ vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
 
         Mat cropped_face(clean_img, Rect(cvRound(r.x*scale),cvRound(r.y*scale),r.width*scale-1, r.height*scale-1));
         // This is what we want to give to recognition software
-        if(faces[i] == largestFace){
+        if(faces[i] == largestRect){
+            largestFace = clean_img;
             imshow("Largest face", cropped_face);
         }
-        imshow("Face" + std::to_string(i), cropped_face);
+        //imshow("Face" + std::to_string(i), cropped_face);
         
 
         rectangle( img, Point(cvRound(r.x*scale), cvRound(r.y*scale)),
@@ -279,14 +320,14 @@ vector<Rect> detectAndDraw( Mat& img, CascadeClassifier& cascade,
         }
         */
     }
-    imshow( "result", img );
+    imshow( "Camera feed", img );
     return faces;
 }
 
-Rect getLargestImage( vector<Rect> images){
+Rect getLargestRect( vector<Rect> rects){
     Rect largestRect(0,0,0,0);
-    for(size_t i = 0; i < images.size(); ++i){
-        Rect rect = images[i];
+    for(size_t i = 0; i < rects.size(); ++i){
+        Rect rect = rects[i];
         if(rect.width > largestRect.width){
             largestRect = rect;
         }
@@ -294,9 +335,12 @@ Rect getLargestImage( vector<Rect> images){
     return largestRect;
 }
 
-Mat prepareImage(Rect image){
+Mat prepareImage(Mat image){
     Mat processed_img;
+
     image.copyTo(processed_img);
+    cvtColor( image, processed_img, COLOR_BGR2GRAY );
+    equalizeHist( processed_img, processed_img );
     return processed_img;
 }
 
