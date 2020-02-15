@@ -19,3 +19,4 @@ Use only faceDetect.cpp, recognize is obsolete
 
 Todo:
 Check if squares are seen in teaching images
+If empty model, crashes

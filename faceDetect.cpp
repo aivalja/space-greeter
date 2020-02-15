@@ -79,7 +79,7 @@ int main( int argc, const char** argv ){
 
     //Testing purposes
     //test();
-
+    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
     load_model();
 
     cascadeName = parser.get<string>("cascade");
@@ -181,6 +181,21 @@ int main( int argc, const char** argv ){
                 model ->predict(processed_image, id, confidence);
                 string result_message = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 cout << result_message << endl;
+            }
+            else if( c == 's')
+            {
+                save_model();
+                cout << "Model saved to file" << endl; 
+            }
+            else if (c == 'l')
+            {
+                cout << "Trying to load a model file" << endl;
+                load_model();
+            }
+            else if (c == 'c')
+            {
+                cout << "Model cleared" << endl;
+                model->clear();
             }
         }
     }
@@ -364,7 +379,18 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 static void load_model() {
     // TODO: Check if exists already, if so, load it and do not create new
-    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
+    ifstream file;
+    file.open(model_file); //Load model file
+    if (file)
+    {
+        file.close();
+        model->read(model_file);
+        cout << "Model loaded" << endl;
+    }
+    else
+    {
+        cout << "No model file found" << endl;
+    }
 }
 
 static void save_model() {
