@@ -45,7 +45,7 @@ static Mat norm_0_255(InputArray _src) {
     return dst;
 }
 
-static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
+static void readCsv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
     std::ifstream file(filename.c_str(), ifstream::in);
     if (!file) {
         string error_message = "No valid input file was given, please check the given filename.";
@@ -87,7 +87,7 @@ int main(int argc, const char *argv[]) {
     // Read in the data. This can fail if no valid
     // input filename is given.
     try {
-        read_csv(fn_csv, images, labels);
+        readCsv(fn_csv, images, labels);
     } catch (const cv::Exception& e) {
         cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
         // nothing more we can do
@@ -95,7 +95,7 @@ int main(int argc, const char *argv[]) {
     }
     // Read in the test data
     try {
-        read_csv(fn_test_csv, test_images, test_labels);
+        readCsv(fn_test_csv, test_images, test_labels);
     } catch (const cv::Exception& e) {
         cerr << "Error opening file \"" << fn_test_csv << "\". Reason: " << e.msg << endl;
         // nothing more we can do
