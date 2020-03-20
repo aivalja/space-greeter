@@ -1,3 +1,4 @@
+#include <mysql_connection.h>
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -61,7 +62,6 @@ string modelFile = "faces.yml";
 
 int main(int argc, const char **argv)
 {
-    VideoCapture capture;
     Mat frame, image;
     string inputName;
     bool tryflip;
@@ -95,18 +95,20 @@ int main(int argc, const char **argv)
         parser.printErrors();
         return 0;
     }
-    if (!nestedCascade.load(samples::findFileOrKeep(nestedCascadeName)))
-        cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
+    //if (!nestedCascade.load(samples::findFileOrKeep(nestedCascadeName)))
+    //    cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
     if (!cascade.load(samples::findFile(cascadeName)))
     {
         cerr << "ERROR: Could not load classifier cascade" << endl;
         help();
         return -1;
     }
+    int camera = inputName.empty() ? 0 : inputName[0] - '0';
+    VideoCapture capture(camera);
     if (inputName.empty() || (isdigit(inputName[0]) && inputName.size() == 1))
     {
-        int camera = inputName.empty() ? 0 : inputName[0] - '0';
-        if (!capture.open(camera))
+        
+        if (!capture.isOpened())
         {
             cout << "Capture from camera #" << camera << " didn't work" << endl;
             return 1;
@@ -124,7 +126,7 @@ int main(int argc, const char **argv)
             }
         }
     }
-
+    
     if (capture.isOpened())
     {
         cout << "Video capturing has been started ..." << endl;
