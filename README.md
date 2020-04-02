@@ -6,6 +6,8 @@ g++ faceDetect.cpp -g -I /usr/local/include/opencv4/ -lopencv_gapi -lopencv_stit
 
 ./detect.o 2 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1
 
+./detect.o 2 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --train-csv=train.csv --test-csv=test.csv
+
 ```
 
 While running:
