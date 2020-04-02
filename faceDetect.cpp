@@ -53,7 +53,7 @@ static double predictConfidence(Mat image, int predictedLabel);
 
 static Mat prepareImage(Mat image);
 
-static void test();
+static void test(string trainCsv, string testCsv);
 
 Ptr<FaceRecognizer> model;
 string cascadeName;
@@ -71,15 +71,24 @@ int main(int argc, const char **argv)
                                  "{help h||}"
                                  "{cascade|data/haarcascades/haarcascade_frontalface_alt.xml|}"
                                  "{nested-cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|}"
-                                 "{scale|1|}{try-flip||}{@filename||}");
+                                 "{scale|1|}{try-flip||}{@filename||}"
+                                 "{test||}"
+                                 "{train-csv|train.csv}"
+                                 "{test-csv|test.csv}");
     if (parser.has("help"))
     {
         help();
         return 0;
     }
-
+    cout << "-2" << endl;
+    if (parser.has("test"))
+    {
+        test(parser.get<string>("train-csv"), parser.get<string>("test-csv"));
+        return 1;
+    }
     //Testing purposes
     //test();
+
     model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
     loadModel();
 
@@ -430,11 +439,11 @@ static double predictConfidence(Mat image, int predictedLabel)
 }
 
 // For teting purposes, I bet you didn't guess that
-static void test()
+static void test(string trainCsv, string testCsv)
 {
     // Get the path to your CSV.
-    string fnCsv = "train.csv";
-    string fnTestCsv = "test.csv";
+    string fnCsv = trainCsv;
+    string fnTestCsv = testCsv;
     // These vectors hold the images and corresponding labels.
     vector<Mat> images;
     vector<int> labels;
@@ -442,6 +451,7 @@ static void test()
     vector<int> testLabels;
     // Read in the data. This can fail if no valid
     // input filename is given.
+    cout << "1" << endl;
     try
     {
         readCsv(fnCsv, images, labels);
@@ -473,12 +483,14 @@ static void test()
     // later in code to reshape the images to their original
     // size:
     int height = images[0].rows;
-
+    cout << "2" << endl;
     loadModel();
+    cout << "3" << endl;
     for (int i = 0; i < images.size(); i++)
     {
         updateModel(images[i], labels[i]);
     }
+    cout << "4" << endl;
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
