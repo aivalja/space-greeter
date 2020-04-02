@@ -73,24 +73,24 @@ int main(int argc, const char **argv)
                                  "{nested-cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|}"
                                  "{scale|1|}{try-flip||}{@filename||}"
                                  "{test||}"
-                                 "{train-csv|train.csv}"
-                                 "{test-csv|test.csv}");
+                                 "{train-csv|train.csv|}"
+                                 "{test-csv|test.csv|}");
     if (parser.has("help"))
     {
         help();
         return 0;
     }
-    cout << "-2" << endl;
+
+    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
+    loadModel();
+
     if (parser.has("test"))
     {
         test(parser.get<string>("train-csv"), parser.get<string>("test-csv"));
         return 1;
     }
-    //Testing purposes
-    //test();
 
-    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
-    loadModel();
+
 
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
@@ -451,7 +451,6 @@ static void test(string trainCsv, string testCsv)
     vector<int> testLabels;
     // Read in the data. This can fail if no valid
     // input filename is given.
-    cout << "1" << endl;
     try
     {
         readCsv(fnCsv, images, labels);
@@ -483,14 +482,11 @@ static void test(string trainCsv, string testCsv)
     // later in code to reshape the images to their original
     // size:
     int height = images[0].rows;
-    cout << "2" << endl;
-    loadModel();
-    cout << "3" << endl;
+
     for (int i = 0; i < images.size(); i++)
     {
         updateModel(images[i], labels[i]);
     }
-    cout << "4" << endl;
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
