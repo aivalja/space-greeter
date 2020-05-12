@@ -1,4 +1,4 @@
-#include <mysql_connection.h>
+//#include <mysql_connection.h>
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -62,6 +62,7 @@ string modelFile = "faces.yml";
 
 int main(int argc, const char **argv)
 {
+    int threshold = 30;
     Mat frame, image;
     string inputName;
     bool tryflip;
@@ -73,6 +74,7 @@ int main(int argc, const char **argv)
                                  "{nested-cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|}"
                                  "{scale|1|}{try-flip||}{@filename||}"
                                  "{test||}"
+                                 "{scan||}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
@@ -136,6 +138,50 @@ int main(int argc, const char **argv)
         }
     }
     
+    if (parser.has("scan") && capture.isOpened())
+    {
+        cout << "Scanning started" << endl;
+        for (;;)
+        {
+            capture >> frame;
+            if (frame.empty())
+                break;
+            Mat frame1 = frame.clone();
+            Mat largestFace;
+            vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+            Rect largestRect = getLargestRect(images);
+            frame1.copyTo(largestFace);
+            if (largestRect.width <= 0)
+            {
+                continue;
+            }
+            //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
+            //cout << data << endl;
+            Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
+
+            char c = (char)waitKey(10);
+            if (c == 27 || c == 'q' || c == 'Q')
+            {
+                break;
+            }
+
+            // Detect who the person is
+            Mat processedImage = prepareImage(croppedFace);
+            int id = -1;
+            double confidence = 0.0;
+            model->predict(processedImage, id, confidence);
+            string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
+            // Replace this part with writing to database when we get to there
+            if (confidence > 30)
+            {
+                cout << -1 << endl;
+            }
+            else {
+                cout << id << endl;
+            }
+        }
+    }
+
     if (capture.isOpened())
     {
         cout << "Video capturing has been started ..." << endl;
