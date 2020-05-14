@@ -59,6 +59,7 @@ Ptr<FaceRecognizer> model;
 string cascadeName;
 string nestedCascadeName;
 string modelFile = "faces.yml";
+bool silent = false;
 
 int main(int argc, const char **argv)
 {
@@ -75,12 +76,18 @@ int main(int argc, const char **argv)
                                  "{scale|1|}{try-flip||}{@filename||}"
                                  "{test||}"
                                  "{scan||}"
+                                 "{silent||}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
     {
         help();
         return 0;
+    }
+
+    if (parser.has("silent"))
+    {
+        silent = true;
     }
 
     model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
@@ -145,7 +152,9 @@ int main(int argc, const char **argv)
         {
             capture >> frame;
             if (frame.empty())
+            {
                 break;
+            }
             Mat frame1 = frame.clone();
             Mat largestFace;
             vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
@@ -153,6 +162,7 @@ int main(int argc, const char **argv)
             frame1.copyTo(largestFace);
             if (largestRect.width <= 0)
             {
+                cout << -1 << endl;
                 continue;
             }
             //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
@@ -213,8 +223,11 @@ int main(int argc, const char **argv)
 
                 int id = c - 48; // convert ascii to numbers
                 Mat processedImage = prepareImage(croppedFace);
-                imshow("The face that would we teached", croppedFace);
-                imshow("Processed version", processedImage);
+                if (!silent)
+                {
+                    imshow("The face that would we teached", croppedFace);
+                    imshow("Processed version", processedImage);
+                }
                 cout << "Teach this with id " << to_string(id) << "?" << endl;
                 // Wait for the user to confirm the teaching, if space is pressed tech, otherwise discard
                 char c2 = (char)waitKey(0);
@@ -361,7 +374,10 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
         if (faces[i] == largestRect)
         {
             largestFace = cleanImg;
-            imshow("Largest face", croppedFace);
+            if (!silent)
+            {
+                imshow("Largest face", croppedFace);
+            }
         }
         //imshow("Face" + std::to_string(i), croppedFace);
 
@@ -391,7 +407,10 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
         }
         */
     }
-    imshow("Camera feed", img);
+    if (!silent)
+    {
+        imshow("Camera feed", img);
+    }
     return faces;
 }
 
