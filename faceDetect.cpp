@@ -1,4 +1,16 @@
-//#include <mysql_connection.h>
+
+#include <stdlib.h>
+#include <stdexcept>
+/* uncomment for applications that use vectors */
+/*#include <vector>*/
+
+#include "mysql_connection.h"
+
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -59,10 +71,43 @@ Ptr<FaceRecognizer> model;
 string cascadeName;
 string nestedCascadeName;
 string modelFile = "faces.yml";
+string database = "recog";
+string table = "test";
+string database_user = "root";
+string database_password = "password";
 bool silent = false;
-
+using namespace std;
+sql::Driver *driver;
+sql::Connection *con;
+sql::Statement *stmt;
+sql::ResultSet *res;
 int main(int argc, const char **argv)
 {
+    try {
+        
+
+        /* Create a connection */
+        driver = get_driver_instance();
+        con = driver->connect("tcp://127.0.0.1:3306", database_user, database_password);
+        /* Connect to the MySQL database */
+        //con->setSchema("recog");
+
+        stmt = con->createStatement();
+        stmt->execute("USE " + database);
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+        stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 42)");
+        res = stmt->executeQuery("SELECT status FROM " + table + " WHERE id=0");
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+        
+
+    } catch (sql::SQLException &e) {
+        cout << "# ERR: SQLException in " << __FILE__;
+        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+        cout << "# ERR: " << e.what();
+        cout << " (MySQL error code: " << e.getErrorCode();
+        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+    }
+
     int threshold = 30;
     Mat frame, image;
     string inputName;
@@ -150,6 +195,18 @@ int main(int argc, const char **argv)
         cout << "Scanning started" << endl;
         for (;;)
         {
+            if(!con->isValid()){
+                cout << "Database connection invalid, attempting to reconnect..." << endl;
+                try{
+                    con->reconnect();
+                } catch (sql::SQLException &e) {
+                    cout << "# ERR: SQLException in " << __FILE__;
+                    cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+                    cout << "# ERR: " << e.what();
+                    cout << " (MySQL error code: " << e.getErrorCode();
+                    cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+                }
+            }
             capture >> frame;
             if (frame.empty())
             {
@@ -162,7 +219,9 @@ int main(int argc, const char **argv)
             frame1.copyTo(largestFace);
             if (largestRect.width <= 0)
             {
-                cout << -1 << endl;
+                stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, -1)");
+                cout << "No faces, status: -1" << endl;
                 continue;
             }
             //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
@@ -184,10 +243,14 @@ int main(int argc, const char **argv)
             // Replace this part with writing to database when we get to there
             if (confidence > 30)
             {
-                cout << -1 << endl;
+                stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                cout << "Not recognized, status: 0" << endl;
             }
             else {
-                cout << id << endl;
+                stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (0, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
+                cout << "Recognized, status: 1, person:" + to_string(id) + ", confidence: " + to_string(confidence) << endl;
             }
         }
     }
@@ -216,6 +279,9 @@ int main(int argc, const char **argv)
             char c = (char)waitKey(10);
             if (c == 27 || c == 'q' || c == 'Q')
             {
+                delete res;
+                delete stmt;
+                delete con;
                 break;
             }
             else if (47 < c && c < 58) // if number is pressed
