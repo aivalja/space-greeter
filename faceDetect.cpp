@@ -500,7 +500,7 @@ Mat prepareImage(Mat image)
 
     image.copyTo(processedImg);
     cvtColor(image, processedImg, COLOR_BGR2GRAY);
-    equalizeHist(processedImg, processedImg);
+    equalizeHist(processedImg, processedImg); // Does this work as intended? Should the output image be different?
     return processedImg;
 }
 
