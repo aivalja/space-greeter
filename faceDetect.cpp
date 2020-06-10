@@ -97,6 +97,10 @@ int main(int argc, const char **argv)
         stmt->execute("DELETE FROM " + table + " WHERE id=0");
         stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 42)");
         res = stmt->executeQuery("SELECT status FROM " + table + " WHERE id=0");
+        while (res->next()) {
+            cout << res->getString("status") << endl;
+        }
+        delete res;
         stmt->execute("DELETE FROM " + table + " WHERE id=0");
         
 
@@ -189,7 +193,8 @@ int main(int argc, const char **argv)
             }
         }
     }
-    
+    int teach = 0;
+    int person_id = 0;
     if (parser.has("scan") && capture.isOpened())
     {
         cout << "Scanning started" << endl;
@@ -212,6 +217,15 @@ int main(int argc, const char **argv)
             {
                 break;
             }
+            // Check whether the person in frame should be taught to the model
+            res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
+            while (res->next()) {
+                teach = 1;
+                person_id = res->getInt("person_id");
+                stmt->execute("DELETE FROM " + table + " WHERE id=1");
+            }
+            delete res;
+
             Mat frame1 = frame.clone();
             Mat largestFace;
             vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
@@ -233,24 +247,33 @@ int main(int argc, const char **argv)
             {
                 break;
             }
-
-            // Detect who the person is
+            
             Mat processedImage = prepareImage(croppedFace);
-            int id = -1;
-            double confidence = 0.0;
-            model->predict(processedImage, id, confidence);
-            string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
-            // Replace this part with writing to database when we get to there
-            if (confidence > 30)
-            {
-                stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
-                cout << "Not recognized, status: 0" << endl;
+            
+            if(teach){
+                cout << "Teach face with id " << to_string(person_id) << endl;
+                updateModel(processedImage, person_id);
+                teach = 0;
+                person_id = 0;
             }
             else {
-                stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (0, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
-                cout << "Recognized, status: 1, person:" + to_string(id) + ", confidence: " + to_string(confidence) << endl;
+                // Detect who the person is
+                int id = -1;
+                double confidence = 0.0;
+                model->predict(processedImage, id, confidence);
+                string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
+                // Replace this part with writing to database when we get to there
+                if (confidence > 30)
+                {
+                    stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                    stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                    cout << "Not recognized, status: 0" << endl;
+                }
+                else {
+                    stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (0, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
+                    cout << "Recognized, status: 1, person:" + to_string(id) + ", confidence: " + to_string(confidence) << endl;
+                }
             }
         }
     }
