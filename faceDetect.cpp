@@ -21,6 +21,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <thread>
 using namespace std;
 using namespace cv;
 using namespace cv::face;
@@ -75,8 +76,13 @@ string database = "recog";
 string table = "test";
 string database_user = "root";
 string database_password = "password";
+
+int photo_delay = 5;
+int photo_amount = 3;
+int photo_amount_counter = 0;
+int threshold = 30;
 bool silent = false;
-using namespace std;
+
 sql::Driver *driver;
 sql::Connection *con;
 sql::Statement *stmt;
@@ -112,7 +118,7 @@ int main(int argc, const char **argv)
         cout << ", SQLState: " << e.getSQLState() << " )" << endl;
     }
 
-    int threshold = 30;
+    
     Mat frame, image;
     string inputName;
     bool tryflip;
@@ -220,9 +226,16 @@ int main(int argc, const char **argv)
             // Check whether the person in frame should be taught to the model
             res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
             while (res->next()) {
+                int temp_counter = photo_delay;
+                while(temp_counter > 0){
+                    cout << temp_counter << endl;
+                    this_thread::sleep_for(chrono::seconds(1));
+                    temp_counter = temp_counter - 1;
+                }
                 teach = 1;
                 person_id = res->getInt("person_id");
                 stmt->execute("DELETE FROM " + table + " WHERE id=1");
+                photo_amount_counter = 0;
             }
             delete res;
 
@@ -234,8 +247,8 @@ int main(int argc, const char **argv)
             if (largestRect.width <= 0)
             {
                 stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, -1)");
-                cout << "No faces, status: -1" << endl;
+                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                cout << "." << std::flush;
                 continue;
             }
             //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
@@ -249,29 +262,38 @@ int main(int argc, const char **argv)
             }
             
             Mat processedImage = prepareImage(croppedFace);
-            
-            if(teach){
-                cout << "Teach face with id " << to_string(person_id) << endl;
-                updateModel(processedImage, person_id);
-                teach = 0;
-                person_id = 0;
+            if(teach)
+            {   
+                if(photo_amount_counter < photo_amount)
+                {
+                    photo_amount_counter += 1;
+                    cout << "Teach face with id " << to_string(person_id) << ". Photo " << photo_amount_counter << " out of " << photo_amount << endl;
+                    updateModel(processedImage, person_id);
+                } 
+                else 
+                {
+                    teach = 0;
+                    person_id = 0;
+                    photo_amount_counter == 0;
+                }
             }
-            else {
+            else 
+            {
                 // Detect who the person is
                 int id = -1;
                 double confidence = 0.0;
                 model->predict(processedImage, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 // Replace this part with writing to database when we get to there
-                if (confidence > 30)
+                if (confidence > threshold)
                 {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                    stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                    stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
                     cout << "Not recognized, status: 0" << endl;
                 }
                 else {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (0, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
+                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
                     cout << "Recognized, status: 1, person:" + to_string(id) + ", confidence: " + to_string(confidence) << endl;
                 }
             }
