@@ -22,7 +22,10 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
-using namespace std;
+using std::cout;
+using std::endl;
+using std::vector;
+using std::string;
 using namespace cv;
 using namespace cv::face;
 
@@ -80,7 +83,7 @@ string database_password = "password";
 int photo_delay = 5;
 int photo_amount = 3;
 int photo_amount_counter = 0;
-int threshold = 30;
+double confidence_limit = 30;
 bool silent = false;
 
 sql::Driver *driver;
@@ -140,6 +143,7 @@ int main(int argc, const char **argv)
         return 0;
     }
 
+    // No image shown
     if (parser.has("silent"))
     {
         silent = true;
@@ -147,13 +151,6 @@ int main(int argc, const char **argv)
 
     model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
     loadModel();
-
-    if (parser.has("test"))
-    {
-        test(parser.get<string>("train-csv"), parser.get<string>("test-csv"));
-        return 1;
-    }
-
 
 
     cascadeName = parser.get<string>("cascade");
@@ -169,13 +166,20 @@ int main(int argc, const char **argv)
         return 0;
     }
     //if (!nestedCascade.load(samples::findFileOrKeep(nestedCascadeName)))
-    //    cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
+    //    std::cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
     if (!cascade.load(samples::findFile(cascadeName)))
     {
-        cerr << "ERROR: Could not load classifier cascade" << endl;
+        std::cerr << "ERROR: Could not load classifier cascade" << endl;
         help();
         return -1;
     }
+
+    if (parser.has("test"))
+    {
+        test(parser.get<string>("train-csv"), parser.get<string>("test-csv"));
+        return 1;
+    }
+
     int camera = inputName.empty() ? 0 : inputName[0] - '0';
     VideoCapture capture(camera);
     if (inputName.empty() || (isdigit(inputName[0]) && inputName.size() == 1))
@@ -229,7 +233,7 @@ int main(int argc, const char **argv)
                 int temp_counter = photo_delay;
                 while(temp_counter > 0){
                     cout << temp_counter << endl;
-                    this_thread::sleep_for(chrono::seconds(1));
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                     temp_counter = temp_counter - 1;
                 }
                 teach = 1;
@@ -267,11 +271,12 @@ int main(int argc, const char **argv)
                 if(photo_amount_counter < photo_amount)
                 {
                     photo_amount_counter += 1;
-                    cout << "Teach face with id " << to_string(person_id) << ". Photo " << photo_amount_counter << " out of " << photo_amount << endl;
+                    cout << "Teach face with id " << std::to_string(person_id) << ". Photo " << photo_amount_counter << " out of " << photo_amount << endl;
                     updateModel(processedImage, person_id);
                 } 
                 else 
                 {
+                    saveModel();
                     teach = 0;
                     person_id = 0;
                     photo_amount_counter == 0;
@@ -285,7 +290,7 @@ int main(int argc, const char **argv)
                 model->predict(processedImage, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 // Replace this part with writing to database when we get to there
-                if (confidence > threshold)
+                if (confidence > confidence_limit)
                 {
                     stmt->execute("DELETE FROM " + table + " WHERE id=2");
                     stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
@@ -293,8 +298,8 @@ int main(int argc, const char **argv)
                 }
                 else {
                     stmt->execute("DELETE FROM " + table + " WHERE id=2");
-                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + to_string(id) + ", " + to_string(confidence) + ", 1)");
-                    cout << "Recognized, status: 1, person:" + to_string(id) + ", confidence: " + to_string(confidence) << endl;
+                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
+                    cout << "Recognized, status: 1, person:" + std::to_string(id) + ", confidence: " + std::to_string(confidence) << endl;
                 }
             }
         }
@@ -339,12 +344,12 @@ int main(int argc, const char **argv)
                     imshow("The face that would we teached", croppedFace);
                     imshow("Processed version", processedImage);
                 }
-                cout << "Teach this with id " << to_string(id) << "?" << endl;
+                cout << "Teach this with id " << std::to_string(id) << "?" << endl;
                 // Wait for the user to confirm the teaching, if space is pressed tech, otherwise discard
                 char c2 = (char)waitKey(0);
                 if (c2 == 32)
                 {
-                    cout << "Teach face with id " << to_string(id) << endl;
+                    cout << "Teach face with id " << std::to_string(id) << endl;
                     updateModel(processedImage, id);
                 }
                 else
@@ -412,7 +417,7 @@ int main(int argc, const char **argv)
                     }
                     else
                     {
-                        cerr << "Aw snap, couldn't read image " << buf << endl;
+                        std::cerr << "Aw snap, couldn't read image " << buf << endl;
                     }
                 }
                 fclose(f);
@@ -490,7 +495,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
                 imshow("Largest face", croppedFace);
             }
         }
-        //imshow("Face" + std::to_string(i), croppedFace);
+        //imshow("Face" + std::std::to_string(i), croppedFace);
 
         rectangle(img, Point(cvRound(r.x * scale), cvRound(r.y * scale)),
                   Point(cvRound((r.x + r.width - 1) * scale), cvRound((r.y + r.height - 1) * scale)),
@@ -551,7 +556,7 @@ Mat prepareImage(Mat image)
 
 static void readCsv(const string &filename, vector<Mat> &images, vector<int> &labels, char separator = ';')
 {
-    std::ifstream file(filename.c_str(), ifstream::in);
+    std::ifstream file(filename.c_str(), std::ifstream::in);
     if (!file)
     {
         string errorMessage = "No valid input file was given, please check the given filename.";
@@ -560,7 +565,7 @@ static void readCsv(const string &filename, vector<Mat> &images, vector<int> &la
     string line, path, classlabel;
     while (getline(file, line))
     {
-        stringstream liness(line);
+        std::stringstream liness(line);
         getline(liness, path, separator);
         getline(liness, classlabel);
         if (!path.empty() && !classlabel.empty())
@@ -574,7 +579,7 @@ static void readCsv(const string &filename, vector<Mat> &images, vector<int> &la
 static void loadModel()
 {
     // TODO: Check if exists already, if so, load it and do not create new
-    ifstream file;
+    std::ifstream file;
     file.open(modelFile); //Load model file
     if (file)
     {
@@ -633,7 +638,7 @@ static void test(string trainCsv, string testCsv)
     }
     catch (const cv::Exception &e)
     {
-        cerr << "Error opening file \"" << fnCsv << "\". Reason: " << e.msg << endl;
+        std::cerr << "Error opening file \"" << fnCsv << "\". Reason: " << e.msg << endl;
         // nothing more we can do
         exit(1);
     }
@@ -644,7 +649,7 @@ static void test(string trainCsv, string testCsv)
     }
     catch (const cv::Exception &e)
     {
-        cerr << "Error opening file \"" << fnTestCsv << "\". Reason: " << e.msg << endl;
+        std::cerr << "Error opening file \"" << fnTestCsv << "\". Reason: " << e.msg << endl;
         // nothing more we can do
         exit(1);
     }
