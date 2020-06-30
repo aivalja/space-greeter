@@ -445,9 +445,13 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
             Scalar(0, 0, 255),
             Scalar(255, 0, 255)};
     Mat gray, smallImg;
-    cout << "5.1" << endl;
-    cvtColor(img, gray, COLOR_BGR2GRAY); // Kaatuu tässä
-    cout << "5.2" << endl;
+    if(img.channels() != 1) {
+        cvtColor(img, gray, COLOR_BGR2GRAY); // Kaatuu tässä
+    }
+    else 
+    {
+        gray = img;
+    }
     double fx = 1 / scale;
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
     equalizeHist(smallImg, smallImg);
@@ -552,7 +556,14 @@ Mat prepareImage(Mat image)
     Mat processedImg;
 
     image.copyTo(processedImg);
-    cvtColor(image, processedImg, COLOR_BGR2GRAY);
+    if(image.channels() != 1)
+    {
+        cvtColor(image, processedImg, COLOR_BGR2GRAY);
+    }
+    else
+    {
+        processedImg = image;
+    }
     equalizeHist(processedImg, processedImg); // Does this work as intended? Should the output image be different?
     return processedImg;
 }
@@ -635,7 +646,6 @@ static void test(string trainCsv, string testCsv)
     vector<int> testLabels;
     // Read in the data. This can fail if no valid
     // input filename is given.
-    cout << "1" << endl;
     try
     {
         readCsv(fnCsv, images, labels);
@@ -647,7 +657,6 @@ static void test(string trainCsv, string testCsv)
         exit(1);
     }
     // Read in the test data
-    cout << "2" << endl;
     try
     {
         readCsv(fnTestCsv, testImages, testLabels);
@@ -658,7 +667,6 @@ static void test(string trainCsv, string testCsv)
         // nothing more we can do
         exit(1);
     }
-    cout << "3" << endl;
     // Quit if there are not enough images for this demo.
     if (images.size() < 1)
     {
@@ -669,18 +677,16 @@ static void test(string trainCsv, string testCsv)
     // later in code to reshape the images to their original
     // size:
     int height = images[0].rows;
-    cout << "4" << endl;
     for (int i = 0; i < images.size(); i++)
     {
         Mat frame1 = images[i];
-        cout << "5" << endl;
+        // After this...
+        imshow("Camera feed", frame1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         Mat largestFace;
         vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
-        cout << "6" << endl;
         Rect largestRect = getLargestRect(images);
-        cout << "7" << endl;
         frame1.copyTo(largestFace);
-        cout << "8" << endl;
         if (largestRect.width <= 0)
         {
             cout << "No face found" << endl;
@@ -689,8 +695,8 @@ static void test(string trainCsv, string testCsv)
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
         //cout << data << endl;
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
-        cout << "9" << endl;
         Mat processedImage = prepareImage(croppedFace);
+        // And before this shit breaks. Plz fix
         updateModel(processedImage, labels[i]);
     }
     int correct = 0;
