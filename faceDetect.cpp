@@ -431,6 +431,7 @@ int main(int argc, const char **argv)
 vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
                            CascadeClassifier &nestedCascade,
                            double scale, bool tryflip)
+                           
 {
     double t = 0;
     vector<Rect> faces, faces2;
@@ -456,12 +457,14 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
     equalizeHist(smallImg, smallImg);
     t = (double)getTickCount();
-
     cascade.detectMultiScale(smallImg, faces,
-                             1.1, 2, 0
+                            1.05, // scalefactor
+                            2,   // Min neighbors
+                            0
                              //|CASCADE_FIND_BIGGEST_OBJECT
                              //|CASCADE_DO_ROUGH_SEARCH
-                             | CASCADE_SCALE_IMAGE,
+                             |CASCADE_SCALE_IMAGE,
+                             
                              Size(30, 30));
     if (tryflip)
     {
@@ -479,7 +482,6 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     }
     t = (double)getTickCount() - t;
     // printf( "detection time = %g ms\n", t*1000/getTickFrequency());
-
     Mat cleanImg, largestFace;
     img.copyTo(cleanImg);
     Rect largestRect = getLargestRect(faces);
@@ -681,8 +683,8 @@ static void test(string trainCsv, string testCsv)
     {
         Mat frame1 = images[i];
         // After this...
-        imshow("Camera feed", frame1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //imshow("Camera feed", frame1);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         Mat largestFace;
         vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
         Rect largestRect = getLargestRect(images);
@@ -694,10 +696,18 @@ static void test(string trainCsv, string testCsv)
         }
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
         //cout << data << endl;
-        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
-        Mat processedImage = prepareImage(croppedFace);
+        //imshow("Face before cropping", frame1);
+        //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
+        //cout << croppedFace << endl;
+        //Mat croppedFace(cleanImg, Rect(cvRound(r.x * scale), cvRound(r.y * scale), r.width * scale - 1, r.height * scale - 1));
+        
+        //imshow("Face after cropping", croppedFace);
+        //Mat processedImage = prepareImage(croppedFace);
+        //imshow("The face ", processedImage);
         // And before this shit breaks. Plz fix
-        updateModel(processedImage, labels[i]);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        updateModel(croppedFace, labels[i]);
     }
     int correct = 0;
     int wrong = 0;
@@ -706,9 +716,26 @@ static void test(string trainCsv, string testCsv)
     {
         int predictedLabel = -1;
         double confidence = 0.0;
+        
         auto start = std::chrono::high_resolution_clock::now();
-        predictedLabel = predictFace(testImages[i]);
-        confidence = predictConfidence(testImages[i], predictedLabel);
+        Mat frame1 = testImages[i];
+        Mat largestFace;
+        vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+        Rect largestRect = getLargestRect(images);
+        frame1.copyTo(largestFace);
+        if (largestRect.width <= 0)
+        {
+            cout << "No face found" << endl;
+            continue;
+        }
+        //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
+        //cout << data << endl;
+        //imshow("Face before cropping", frame1);
+        cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
+
+        predictedLabel = predictFace(croppedFace);
+        confidence = predictConfidence(croppedFace, predictedLabel);
         auto finish = std::chrono::high_resolution_clock::now();
         double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
 
