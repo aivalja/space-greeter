@@ -293,7 +293,7 @@ int main(int argc, const char **argv)
                 if (confidence > confidence_limit)
                 {
                     stmt->execute("DELETE FROM " + table + " WHERE id=2");
-                    stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
+                    //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
                     cout << "Not recognized, status: 0" << endl;
                 }
                 else {
