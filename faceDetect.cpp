@@ -470,7 +470,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     {
         flip(smallImg, smallImg, 1);
         cascade.detectMultiScale(smallImg, faces2,
-                                 1.1, 2, 0
+                                 1.05, 2, 0
                                  //|CASCADE_FIND_BIGGEST_OBJECT
                                  //|CASCADE_DO_ROUGH_SEARCH
                                  | CASCADE_SCALE_IMAGE,
@@ -678,9 +678,15 @@ static void test(string trainCsv, string testCsv)
     // Get the height from the first image. We'll need this
     // later in code to reshape the images to their original
     // size:
+    int missedFaces = 0;
+    int totalFaces = images.size();
+    double progress = 0.0;
     int height = images[0].rows;
+    cout << format("Starting to teach %d images.", totalFaces) << endl;
     for (int i = 0; i < images.size(); i++)
     {
+        progress = 1.0 * i / totalFaces * 100;
+        cout << "\r" << format("Progress: %.1f%", progress) << std::flush;
         Mat frame1 = images[i];
         // After this...
         //imshow("Camera feed", frame1);
@@ -691,7 +697,8 @@ static void test(string trainCsv, string testCsv)
         frame1.copyTo(largestFace);
         if (largestRect.width <= 0)
         {
-            cout << "No face found" << endl;
+            missedFaces++;
+            //cout << "No face found." << endl;
             continue;
         }
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
@@ -709,6 +716,7 @@ static void test(string trainCsv, string testCsv)
         //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         updateModel(croppedFace, labels[i]);
     }
+    cout << endl;
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
@@ -731,7 +739,7 @@ static void test(string trainCsv, string testCsv)
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
         //cout << data << endl;
         //imshow("Face before cropping", frame1);
-        cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
+        //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
 
         predictedLabel = predictFace(croppedFace);
@@ -753,5 +761,6 @@ static void test(string trainCsv, string testCsv)
     }
     double accuracy = 1.0 * correct / (correct + wrong) * 100;
     double averageFps = testImages.size() / elapsed;
-    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, averageFps) << endl;
+    double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
+    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
 }
