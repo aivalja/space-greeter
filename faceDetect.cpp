@@ -22,6 +22,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <deque>
 using std::cout;
 using std::endl;
 using std::vector;
@@ -71,6 +72,7 @@ static Mat prepareImage(Mat image);
 
 static void test(string trainCsv, string testCsv);
 
+
 Ptr<FaceRecognizer> model;
 string cascadeName;
 string nestedCascadeName;
@@ -84,6 +86,7 @@ int photo_delay = 5;
 int photo_amount = 3;
 int photo_amount_counter = 0;
 double confidence_limit = 30;
+int history_length = 5;
 bool silent = false;
 
 sql::Driver *driver;
@@ -120,7 +123,6 @@ int main(int argc, const char **argv)
         cout << " (MySQL error code: " << e.getErrorCode();
         cout << ", SQLState: " << e.getSQLState() << " )" << endl;
     }
-
     
     Mat frame, image;
     string inputName;
@@ -207,6 +209,13 @@ int main(int argc, const char **argv)
     int person_id = 0;
     if (parser.has("scan") && capture.isOpened())
     {
+        // Initiate history with zeroes (no face detected)
+        std::deque<int> history;
+        for (int i = 0; i < history_length; i++)
+        {
+            history.push_front(0);
+        }
+
         cout << "Scanning started" << endl;
         for (;;)
         {
@@ -222,11 +231,41 @@ int main(int argc, const char **argv)
                     cout << ", SQLState: " << e.getSQLState() << " )" << endl;
                 }
             }
-            capture >> frame;
-            if (frame.empty())
-            {
-                break;
+            int max = 0;
+            int most_common = -1;
+            std::map<int,int> m;
+            for (auto vi = history.begin(); vi != history.end(); vi++) {
+                m[*vi]++;
+                if (m[*vi] > max) {
+                    max = m[*vi]; 
+                    most_common = *vi;
+                }
             }
+
+            cout << format("Median detection past %d images is %d", history.size(), most_common) << endl;
+            capture >> frame;
+
+            if(most_common == 0)
+            {
+                stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+            }
+            else if (most_common == -1)
+            {
+                stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
+
+            }
+            else if (most_common > 0)
+            {
+                stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                // This one has confidence, how to calculate it?
+                //stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(most_common) + ", " + std::to_string(confidence) + ", 1)");
+                stmt->execute("INSERT INTO " + table + "(id, person_id, status) VALUES (2, " + std::to_string(most_common)+ ", 1)");
+            
+            }
+
+
             // Check whether the person in frame should be taught to the model
             res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
             while (res->next()) {
@@ -250,8 +289,12 @@ int main(int argc, const char **argv)
             frame1.copyTo(largestFace);
             if (largestRect.width <= 0)
             {
-                stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                // No faces detected
+                history.push_front(0);
+                history.pop_back();
+                // These are done before after calculating most_common
+                // stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                // stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
                 cout << "." << std::flush;
                 continue;
             }
@@ -289,16 +332,26 @@ int main(int argc, const char **argv)
                 double confidence = 0.0;
                 model->predict(processedImage, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
-                // Replace this part with writing to database when we get to there
+
                 if (confidence > confidence_limit)
                 {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
+
+                    // Unknown face
+                    history.push_front(-1);
+                    history.pop_back(); 
+                    // These are done before after calculating most_common
+                    // stmt->execute("DELETE FROM " + table + " WHERE id=2");
                     //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
                     cout << "Not recognized, status: 0" << endl;
                 }
                 else {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
-                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
+
+                    // Recognized
+                    history.push_front(id);
+                    history.pop_back();
+                    // These are done before after calculating most_common
+                    // stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                    // stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
                     cout << "Recognized, status: 1, person:" + std::to_string(id) + ", confidence: " + std::to_string(confidence) << endl;
                 }
             }
