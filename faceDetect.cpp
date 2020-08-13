@@ -88,6 +88,7 @@ int photo_amount = 3;
 int photo_amount_counter = 0;
 double confidence_limit = 30;
 bool silent = false;
+bool demo = false;
 
 sql::Driver *driver;
 sql::Connection *con;
@@ -136,6 +137,7 @@ int main(int argc, const char **argv)
                                  "{test||}"
                                  "{scan||}"
                                  "{silent||}"
+                                 "{demo||}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
@@ -204,6 +206,24 @@ int main(int argc, const char **argv)
             }
         }
     }
+
+    if (parser.has("demo"))
+    {
+        demo = 1;
+        Mat demoImage = imread("demo.jpg", IMREAD_COLOR);
+        imshow("Demo image original",demoImage);
+        Mat frame1 = demoImage.clone();
+        Mat largestFace;
+        vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+        Rect largestRect = getLargestRect(images);
+        frame1.copyTo(largestFace);
+        //imshow("Largest face", largestFace);
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
+        imwrite("demo_cropped.jpg", croppedFace);
+        Mat processedImage = prepareImage(croppedFace);
+        return 1;
+    }
+
     int teach = 0;
     int person_id = 0;
     if (parser.has("scan") && capture.isOpened())
@@ -506,9 +526,9 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
         }
         //imshow("Face" + std::std::to_string(i), croppedFace);
 
-        rectangle(img, Point(cvRound(r.x * scale), cvRound(r.y * scale)),
-                  Point(cvRound((r.x + r.width - 1) * scale), cvRound((r.y + r.height - 1) * scale)),
-                  color, 3, 8, 0);
+        //rectangle(img, Point(cvRound(r.x * scale), cvRound(r.y * scale)),
+        //          Point(cvRound((r.x + r.width - 1) * scale), cvRound((r.y + r.height - 1) * scale)),
+        //          color, 3, 8, 0);
 
         // This part can be used to detect objects (for example eyes) inside the objects
         /*
@@ -566,7 +586,20 @@ Mat prepareImage(Mat image)
     {
         processedImg = image;
     }
+    if(demo)
+    {
+        imwrite("demo_gray.jpg", processedImg);
+    }
+    resize( processedImg, processedImg, Size(), 1, 1, INTER_LINEAR_EXACT );
+    if(demo)
+    {
+        imwrite("demo_gray_resized.jpg", processedImg);
+    }
     equalizeHist(processedImg, processedImg); // Does this work as intended? Should the output image be different?
+    if(demo)
+    {
+        imwrite("demo_final.jpg", processedImg);
+    }
     return processedImg;
 }
 
