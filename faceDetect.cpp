@@ -780,7 +780,7 @@ static void test(string trainCsv, string testCsv)
         auto finish = std::chrono::high_resolution_clock::now();
         double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
 
-        string resultMessage = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs", predictedLabel, testLabels[i], confidence, duration);
+        string resultMessage = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs / Current accuracy = %.2f%% ", predictedLabel, testLabels[i], confidence, duration, 1.0 * correct / (correct + wrong) * 100);
         if (predictedLabel == testLabels[i])
         {
             correct++;

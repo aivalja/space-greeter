@@ -21,7 +21,11 @@ if __name__ == "__main__":
     for line in images:
         temp = line.split(" ")
         label = temp[0]
-        filename = temp[1][:-1]
+        if(len(temp) > 2):
+            filename = temp[1]
+        else:
+            filename = temp[1][:-1]
+        
         subject_path = os.path.join(BASE_PATH, label)
         abs_path = "%s/%s" % (subject_path, filename)
         print("%s%s%d" % (abs_path, SEPARATOR, int(label)))
