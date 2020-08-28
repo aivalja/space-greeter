@@ -9,7 +9,7 @@ g++ faceDetect.cpp -g -I /usr/local/include/opencv4/ -lopencv_gapi -lopencv_stit
 ./detect.o 2 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --train-csv=train.csv --test-csv=test.csv
 
 using data-sorter.py:
-python data-sorter.py /home/anssi/FERET/colorferet/dvd1/data/images/ /home/anssi/FERET/colorferet/dvd1/doc/partitions/fb.txt >> test.csv
+python data-sorter.py /home/anssi/FERET/colorferet/dvd1/data/images/ /home/anssi/FERET/colorferet/dvd1/doc/partitions/fb.txt > test.csv
 
 
 ```

@@ -86,6 +86,8 @@ string database_password = "password";
 int photo_delay = 5;
 int photo_amount = 3;
 int photo_amount_counter = 0;
+int radius;
+int neighbours;
 double confidence_limit = 30;
 bool silent = false;
 bool demo = false;
@@ -138,6 +140,7 @@ int main(int argc, const char **argv)
                                  "{scan||}"
                                  "{silent||}"
                                  "{demo||}"
+                                 "{radius|1|}{neighbours|8|}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
@@ -152,15 +155,16 @@ int main(int argc, const char **argv)
         silent = true;
     }
 
-    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
-    loadModel();
 
 
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
     scale = parser.get<double>("scale");
+    radius = parser.get<int>("radius");
+    neighbours = parser.get<int>("neighbours");
     if (scale < 1)
         scale = 1;
+    
     tryflip = parser.has("try-flip");
     inputName = parser.get<string>("@filename");
     if (!parser.check())
@@ -168,6 +172,10 @@ int main(int argc, const char **argv)
         parser.printErrors();
         return 0;
     }
+
+    model = LBPHFaceRecognizer::create(radius, neighbours, 8, 8); // the second number has great impact on performance
+    loadModel();
+
     //if (!nestedCascade.load(samples::findFileOrKeep(nestedCascadeName)))
     //    std::cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
     if (!cascade.load(samples::findFile(cascadeName)))
@@ -719,7 +727,7 @@ static void test(string trainCsv, string testCsv)
     for (int i = 0; i < images.size(); i++)
     {
         progress = 1.0 * i / totalFaces * 100;
-        cout << "\r" << format("Progress: %.1f%", progress) << std::flush;
+        cout << "\r" << format("Training progress: %.1f%", progress) << std::flush;
         Mat frame1 = images[i];
         // After this...
         //imshow("Camera feed", frame1);
@@ -753,8 +761,11 @@ static void test(string trainCsv, string testCsv)
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
+    int totalTestImages = testImages.size();
     for (int i = 0; i < testImages.size(); i++)
     {
+        progress = 1.0 * i / totalTestImages * 100;
+        cout << "\r" << format("Testing progress: %.1f%", progress) << std::flush;
         int predictedLabel = -1;
         double confidence = 0.0;
         
@@ -790,10 +801,16 @@ static void test(string trainCsv, string testCsv)
             wrong++;
         }
         elapsed += duration;
-        cout << resultMessage << endl;
+        // cout << resultMessage << endl;
     }
     double accuracy = 1.0 * correct / (correct + wrong) * 100;
     double averageFps = testImages.size() / elapsed;
     double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
     cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
+    cout << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours) << endl; 
+    std::ofstream log_file("log.txt", std::ios::app);
+    // log_file.open("log.txt", std::ios::app);
+    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f \n", correct, wrong, accuracy, face_detect_accuracy, averageFps);
+    log_file << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours);
+    log_file.close();
 }
