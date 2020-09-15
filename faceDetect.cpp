@@ -836,9 +836,9 @@ static void test(string trainCsv, string testCsv)
                 wrong++;
             }
 
-            // string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
+            string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
             elapsed += duration;
-            cout << resultMessage << endl;
+            // cout << resultMessage << endl;
             history.clear();
         }
 
