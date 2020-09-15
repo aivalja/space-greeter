@@ -22,6 +22,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <deque>
 using std::cout;
 using std::endl;
 using std::vector;
@@ -682,11 +683,16 @@ static void test(string trainCsv, string testCsv)
     // Get the path to your CSV.
     string fnCsv = trainCsv;
     string fnTestCsv = testCsv;
+    
     // These vectors hold the images and corresponding labels.
     vector<Mat> images;
     vector<int> labels;
     vector<Mat> testImages;
     vector<int> testLabels;
+
+    // Initiate history 
+    std::deque<int> history;
+
     // Read in the data. This can fail if no valid
     // input filename is given.
     try
@@ -762,6 +768,9 @@ static void test(string trainCsv, string testCsv)
     int wrong = 0;
     double elapsed = 0;
     int totalTestImages = testImages.size();
+    int totalPersons = 0;
+    int lastPerson = -1;
+    auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < testImages.size(); i++)
     {
         progress = 1.0 * i / totalTestImages * 100;
@@ -769,7 +778,11 @@ static void test(string trainCsv, string testCsv)
         int predictedLabel = -1;
         double confidence = 0.0;
         
-        auto start = std::chrono::high_resolution_clock::now();
+        if(testLabels[i] != testLabels[i-1])
+        {
+            start = std::chrono::high_resolution_clock::now();
+        }
+
         Mat frame1 = testImages[i];
         Mat largestFace;
         vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
@@ -778,6 +791,7 @@ static void test(string trainCsv, string testCsv)
         if (largestRect.width <= 0)
         {
             cout << "No face found" << endl;
+            history.push_front(0);
             continue;
         }
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
@@ -787,21 +801,50 @@ static void test(string trainCsv, string testCsv)
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
 
         predictedLabel = predictFace(croppedFace);
+        history.push_front(predictedLabel);
         confidence = predictConfidence(croppedFace, predictedLabel);
-        auto finish = std::chrono::high_resolution_clock::now();
-        double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
 
-        string resultMessage = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs / Current accuracy = %.2f%% ", predictedLabel, testLabels[i], confidence, duration, 1.0 * correct / (correct + wrong) * 100);
-        if (predictedLabel == testLabels[i])
-        {
-            correct++;
+        
+        if(testLabels[i] != testLabels[i+1]){
+            auto finish = std::chrono::high_resolution_clock::now();
+            double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
+            
+            int max = 0;
+            int most_common = -1;
+            std::map<int,int> m;
+            for (auto vi = history.begin(); vi != history.end(); vi++) {
+                m[*vi]++;
+                if (m[*vi] > max) {if (predictedLabel == testLabels[i])
+            {
+                correct++;
+            }
+            else
+            {
+                wrong++;
+            }
+                    max = m[*vi]; 
+                    most_common = *vi;
+                }
+            }
+            
+            if (most_common == testLabels[i])
+            {
+                correct++;
+            }
+            else
+            {
+                wrong++;
+            }
+
+            // string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
+            elapsed += duration;
+            cout << resultMessage << endl;
+            history.clear();
         }
-        else
-        {
-            wrong++;
-        }
-        elapsed += duration;
-        // cout << resultMessage << endl;
+
+        
+        
+        
     }
     double accuracy = 1.0 * correct / (correct + wrong) * 100;
     double averageFps = testImages.size() / elapsed;
