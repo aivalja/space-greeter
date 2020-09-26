@@ -852,8 +852,12 @@ static void test(string trainCsv, string testCsv)
     cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
     cout << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours) << endl; 
     std::ofstream log_file("log.txt", std::ios::app);
+    std::ofstream log_csv("log.csv", std::ios::app);
+    
     // log_file.open("log.txt", std::ios::app);
     log_file << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f \n", correct, wrong, accuracy, face_detect_accuracy, averageFps);
     log_file << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours);
+    log_csv << format("%d; %d; %.2f%%; %.2f%%; %.2f; %d; %d \n", correct, wrong, accuracy, face_detect_accuracy, averageFps, radius, neighbours);
+    log_csv.close();
     log_file.close();
 }
