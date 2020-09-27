@@ -814,17 +814,18 @@ static void test(string trainCsv, string testCsv)
             std::map<int,int> m;
             for (auto vi = history.begin(); vi != history.end(); vi++) {
                 m[*vi]++;
-                if (m[*vi] > max) {if (predictedLabel == testLabels[i])
-            {
-                correct++;
-            }
-            else
-            {
-                wrong++;
-            }
+                if (m[*vi] > max) {
+                    if (predictedLabel == testLabels[i])
+                    {
+                        //correct++;
+                    }
+                    else
+                    {
+                        //wrong++;
+                    }
                     max = m[*vi]; 
                     most_common = *vi;
-                }
+                    }
             }
             
             if (most_common == testLabels[i])
