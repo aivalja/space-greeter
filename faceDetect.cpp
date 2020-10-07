@@ -89,6 +89,8 @@ int photo_amount = 3;
 int photo_amount_counter = 0;
 int radius;
 int neighbours;
+int min_width;
+int min_height;
 double confidence_limit = 30;
 bool silent = false;
 bool demo = false;
@@ -141,7 +143,7 @@ int main(int argc, const char **argv)
                                  "{scan||}"
                                  "{silent||}"
                                  "{demo||}"
-                                 "{radius|1|}{neighbours|8|}"
+                                 "{radius|1|}{neighbours|8|}{min_width|1|}{min_height|1|}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
@@ -163,6 +165,8 @@ int main(int argc, const char **argv)
     scale = parser.get<double>("scale");
     radius = parser.get<int>("radius");
     neighbours = parser.get<int>("neighbours");
+    min_width = parser.get<int>("min_width");
+    min_height = parser.get<int>("min_height");
     if (scale < 1)
         scale = 1;
     
@@ -482,6 +486,16 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     {
         gray = img;
     }
+    Size tmp_size = gray.size();
+    if(tmp_size.height/min_height < scale)
+    {
+        scale = 1.0*tmp_size.height/min_height;
+    }
+    else if(tmp_size.width/min_width < scale)
+    {
+        scale = 1.0*tmp_size.width/min_width;
+    }
+
     double fx = 1 / scale;
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
     equalizeHist(smallImg, smallImg);
@@ -752,7 +766,23 @@ static void test(string trainCsv, string testCsv)
         //cout << data << endl;
         //imshow("Face before cropping", frame1);
         //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
-        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
+        // HERE BE CRASHES
+        double fixed_scale;
+        if(largestRect.height/min_height < scale)
+        {
+            fixed_scale = 1.0*largestRect.height/min_height;
+        }
+        else if(largestRect.width/min_width < scale)
+        {
+            fixed_scale = 1.0*largestRect.width/min_width;
+        }
+        else
+        {
+            fixed_scale = scale;
+        }
+
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
+        
         //cout << croppedFace << endl;
         //Mat croppedFace(cleanImg, Rect(cvRound(r.x * scale), cvRound(r.y * scale), r.width * scale - 1, r.height * scale - 1));
         
@@ -798,7 +828,21 @@ static void test(string trainCsv, string testCsv)
         //cout << data << endl;
         //imshow("Face before cropping", frame1);
         //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
-        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1));
+        double fixed_scale;
+        if(largestRect.height/min_height < scale)
+        {
+            fixed_scale = 1.0*largestRect.height/min_height;
+        }
+        else if(largestRect.width/min_width < scale)
+        {
+            fixed_scale = 1.0*largestRect.width/min_width;
+        }
+        else
+        {
+            fixed_scale = scale;
+        }
+
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
 
         predictedLabel = predictFace(croppedFace);
         history.push_front(predictedLabel);
