@@ -1,0 +1,9 @@
+Correct: 910 / Wrong: 83 / Accuracy: 91.64% / Detect Accuracy: 99.90% / FPS: 12.27 
+Radius: 10 / Neighbours: 4 
+
+Correct: 922 / Wrong: 71 / Accuracy: 92.85% / Detect Accuracy: 99.90% / FPS: 11.45 
+Radius: 10 / Neighbours: 5 
+
+Correct: 946 / Wrong: 47 / Accuracy: 95.27% / Detect Accuracy: 99.90% / FPS: 1.35 
+Radius: 10 / Neighbours: 10 
+

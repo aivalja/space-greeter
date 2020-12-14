@@ -1,201 +1,27 @@
-Correct: 722 / Wrong: 269 / Accuracy: 72.86% / Detect Accuracy: 99.90% / FPS: 14.44 
-Radius: 1 / Neighbours: 1 
+Correct: 910 / Wrong: 83 / Accuracy: 91.64% / Detect Accuracy: 99.90% / FPS: 15.13 
+Radius: 10 / Neighbours: 4 
 
-Correct: 798 / Wrong: 193 / Accuracy: 80.52% / Detect Accuracy: 99.90% / FPS: 14.47 
-Radius: 1 / Neighbours: 2 
-
-Correct: 846 / Wrong: 145 / Accuracy: 85.37% / Detect Accuracy: 99.90% / FPS: 13.22 
-Radius: 1 / Neighbours: 3 
-
-Correct: 906 / Wrong: 85 / Accuracy: 91.42% / Detect Accuracy: 99.90% / FPS: 14.42 
-Radius: 10 / Neighbours: 3 
-
-Correct: 906 / Wrong: 85 / Accuracy: 91.42% / Detect Accuracy: 99.90% / FPS: 15.67 
-Radius: 10 / Neighbours: 3 
-
-Correct: 722 / Wrong: 269 / Accuracy: 72.86% / Detect Accuracy: 99.90% / FPS: 16.85 
-Radius: 1 / Neighbours: 1 
-
-Correct: 798 / Wrong: 193 / Accuracy: 80.52% / Detect Accuracy: 99.90% / FPS: 16.58 
-Radius: 1 / Neighbours: 2 
-
-Correct: 846 / Wrong: 145 / Accuracy: 85.37% / Detect Accuracy: 99.90% / FPS: 15.58 
-Radius: 1 / Neighbours: 3 
-
-Correct: 890 / Wrong: 101 / Accuracy: 89.81% / Detect Accuracy: 99.90% / FPS: 13.81 
-Radius: 1 / Neighbours: 5 
-
-Correct: 875 / Wrong: 116 / Accuracy: 88.29% / Detect Accuracy: 99.90% / FPS: 8.99 
-Radius: 1 / Neighbours: 7 
-
-Correct: 898 / Wrong: 93 / Accuracy: 90.62% / Detect Accuracy: 99.90% / FPS: 5.22 
-Radius: 1 / Neighbours: 8 
-
-Correct: 881 / Wrong: 110 / Accuracy: 88.90% / Detect Accuracy: 99.90% / FPS: 1.64 
-Radius: 1 / Neighbours: 10 
-
-Correct: 746 / Wrong: 245 / Accuracy: 75.28% / Detect Accuracy: 99.90% / FPS: 16.72 
-Radius: 2 / Neighbours: 1 
-
-Correct: 807 / Wrong: 184 / Accuracy: 81.43% / Detect Accuracy: 99.90% / FPS: 16.10 
-Radius: 2 / Neighbours: 2 
-
-Correct: 881 / Wrong: 110 / Accuracy: 88.90% / Detect Accuracy: 99.90% / FPS: 15.41 
-Radius: 2 / Neighbours: 3 
-
-Correct: 897 / Wrong: 94 / Accuracy: 90.51% / Detect Accuracy: 99.90% / FPS: 13.74 
-Radius: 2 / Neighbours: 5 
-
-Correct: 906 / Wrong: 85 / Accuracy: 91.42% / Detect Accuracy: 99.90% / FPS: 10.24 
-Radius: 2 / Neighbours: 7 
-
-Correct: 914 / Wrong: 77 / Accuracy: 92.23% / Detect Accuracy: 99.90% / FPS: 6.30 
-Radius: 2 / Neighbours: 8 
-
-Correct: 745 / Wrong: 246 / Accuracy: 75.18% / Detect Accuracy: 99.90% / FPS: 16.51 
-Radius: 3 / Neighbours: 1 
-
-Correct: 816 / Wrong: 175 / Accuracy: 82.34% / Detect Accuracy: 99.90% / FPS: 16.13 
-Radius: 3 / Neighbours: 2 
-
-Correct: 896 / Wrong: 95 / Accuracy: 90.41% / Detect Accuracy: 99.90% / FPS: 15.45 
-Radius: 3 / Neighbours: 3 
-
-Correct: 915 / Wrong: 76 / Accuracy: 92.33% / Detect Accuracy: 99.90% / FPS: 13.78 
-Radius: 3 / Neighbours: 5 
-
-Correct: 913 / Wrong: 78 / Accuracy: 92.13% / Detect Accuracy: 99.90% / FPS: 10.12 
-Radius: 3 / Neighbours: 7 
-
-Correct: 921 / Wrong: 70 / Accuracy: 92.94% / Detect Accuracy: 99.90% / FPS: 6.60 
-Radius: 3 / Neighbours: 8 
-
-Correct: 925 / Wrong: 66 / Accuracy: 93.34% / Detect Accuracy: 99.90% / FPS: 1.35 
-Radius: 3 / Neighbours: 10 
-
-Correct: 776 / Wrong: 215 / Accuracy: 78.30% / Detect Accuracy: 99.90% / FPS: 16.87 
-Radius: 5 / Neighbours: 1 
-
-Correct: 841 / Wrong: 150 / Accuracy: 84.86% / Detect Accuracy: 99.90% / FPS: 16.11 
-Radius: 5 / Neighbours: 2 
-
-Correct: 902 / Wrong: 89 / Accuracy: 91.02% / Detect Accuracy: 99.90% / FPS: 15.47 
-Radius: 5 / Neighbours: 3 
-
-Correct: 919 / Wrong: 72 / Accuracy: 92.73% / Detect Accuracy: 99.90% / FPS: 13.91 
-Radius: 5 / Neighbours: 5 
-
-Correct: 925 / Wrong: 66 / Accuracy: 93.34% / Detect Accuracy: 99.90% / FPS: 9.92 
-Radius: 5 / Neighbours: 7 
-
-Correct: 931 / Wrong: 60 / Accuracy: 93.95% / Detect Accuracy: 99.90% / FPS: 5.71 
-Radius: 5 / Neighbours: 8 
-
-Correct: 934 / Wrong: 57 / Accuracy: 94.25% / Detect Accuracy: 99.90% / FPS: 1.39 
-Radius: 5 / Neighbours: 10 
-
-Correct: 775 / Wrong: 216 / Accuracy: 78.20% / Detect Accuracy: 99.90% / FPS: 15.75 
-Radius: 7 / Neighbours: 1 
-
-Correct: 841 / Wrong: 150 / Accuracy: 84.86% / Detect Accuracy: 99.90% / FPS: 16.09 
-Radius: 7 / Neighbours: 2 
-
-Correct: 906 / Wrong: 85 / Accuracy: 91.42% / Detect Accuracy: 99.90% / FPS: 15.73 
-Radius: 7 / Neighbours: 3 
-
-Correct: 926 / Wrong: 65 / Accuracy: 93.44% / Detect Accuracy: 99.90% / FPS: 14.21 
-Radius: 7 / Neighbours: 5 
-
-Correct: 931 / Wrong: 60 / Accuracy: 93.95% / Detect Accuracy: 99.90% / FPS: 9.20 
-Radius: 7 / Neighbours: 7 
-
-Correct: 933 / Wrong: 58 / Accuracy: 94.15% / Detect Accuracy: 99.90% / FPS: 5.61 
-Radius: 7 / Neighbours: 8 
-
-Correct: 945 / Wrong: 46 / Accuracy: 95.36% / Detect Accuracy: 99.90% / FPS: 1.45 
-Radius: 7 / Neighbours: 10 
-
-Correct: 760 / Wrong: 231 / Accuracy: 76.69% / Detect Accuracy: 99.90% / FPS: 16.61 
-Radius: 10 / Neighbours: 1 
-
-Correct: 832 / Wrong: 159 / Accuracy: 83.96% / Detect Accuracy: 99.90% / FPS: 15.97 
-Radius: 10 / Neighbours: 2 
-
-Correct: 906 / Wrong: 85 / Accuracy: 91.42% / Detect Accuracy: 99.90% / FPS: 15.57 
-Radius: 10 / Neighbours: 3 
-
-Correct: 927 / Wrong: 64 / Accuracy: 93.54% / Detect Accuracy: 99.90% / FPS: 13.93 
+Correct: 922 / Wrong: 71 / Accuracy: 92.85% / Detect Accuracy: 99.90% / FPS: 13.92 
 Radius: 10 / Neighbours: 5 
 
-Correct: 938 / Wrong: 53 / Accuracy: 94.65% / Detect Accuracy: 99.90% / FPS: 8.50 
-Radius: 10 / Neighbours: 7 
-
-Correct: 940 / Wrong: 51 / Accuracy: 94.85% / Detect Accuracy: 99.90% / FPS: 5.11 
-Radius: 10 / Neighbours: 8 
-
-Correct: 946 / Wrong: 45 / Accuracy: 95.46% / Detect Accuracy: 99.90% / FPS: 1.56 
+Correct: 946 / Wrong: 47 / Accuracy: 95.27% / Detect Accuracy: 99.90% / FPS: 1.47 
 Radius: 10 / Neighbours: 10 
 
-Correct: 762 / Wrong: 229 / Accuracy: 76.89% / Detect Accuracy: 99.90% / FPS: 16.98 
-Radius: 14 / Neighbours: 1 
+Correct: 911 / Wrong: 82 / Accuracy: 91.74% / Detect Accuracy: 99.90% / FPS: 15.35 
+Radius: 14 / Neighbours: 4 
 
-Correct: 830 / Wrong: 161 / Accuracy: 83.75% / Detect Accuracy: 99.90% / FPS: 16.37 
-Radius: 14 / Neighbours: 2 
-
-Correct: 907 / Wrong: 84 / Accuracy: 91.52% / Detect Accuracy: 99.90% / FPS: 15.64 
-Radius: 14 / Neighbours: 3 
-
-Correct: 928 / Wrong: 63 / Accuracy: 93.64% / Detect Accuracy: 99.90% / FPS: 13.66 
+Correct: 926 / Wrong: 67 / Accuracy: 93.25% / Detect Accuracy: 99.90% / FPS: 13.73 
 Radius: 14 / Neighbours: 5 
 
-Correct: 938 / Wrong: 53 / Accuracy: 94.65% / Detect Accuracy: 99.90% / FPS: 7.84 
-Radius: 14 / Neighbours: 7 
-
-Correct: 946 / Wrong: 45 / Accuracy: 95.46% / Detect Accuracy: 99.90% / FPS: 4.82 
-Radius: 14 / Neighbours: 8 
-
-Correct: 949 / Wrong: 42 / Accuracy: 95.76% / Detect Accuracy: 99.90% / FPS: 1.78 
+Correct: 953 / Wrong: 40 / Accuracy: 95.97% / Detect Accuracy: 99.90% / FPS: 1.65 
 Radius: 14 / Neighbours: 10 
 
-Correct: 750 / Wrong: 241 / Accuracy: 75.68% / Detect Accuracy: 99.90% / FPS: 17.07 
-Radius: 20 / Neighbours: 1 
+Correct: 910 / Wrong: 83 / Accuracy: 91.64% / Detect Accuracy: 99.90% / FPS: 15.36 
+Radius: 20 / Neighbours: 4 
 
-Correct: 817 / Wrong: 174 / Accuracy: 82.44% / Detect Accuracy: 99.90% / FPS: 16.32 
-Radius: 20 / Neighbours: 2 
-
-Correct: 905 / Wrong: 86 / Accuracy: 91.32% / Detect Accuracy: 99.90% / FPS: 15.77 
-Radius: 20 / Neighbours: 3 
-
-Correct: 930 / Wrong: 61 / Accuracy: 93.84% / Detect Accuracy: 99.90% / FPS: 13.74 
+Correct: 923 / Wrong: 70 / Accuracy: 92.95% / Detect Accuracy: 99.90% / FPS: 13.49 
 Radius: 20 / Neighbours: 5 
 
-Correct: 948 / Wrong: 43 / Accuracy: 95.66% / Detect Accuracy: 99.90% / FPS: 7.43 
-Radius: 20 / Neighbours: 7 
-
-Correct: 946 / Wrong: 45 / Accuracy: 95.46% / Detect Accuracy: 99.90% / FPS: 4.80 
-Radius: 20 / Neighbours: 8 
-
-Correct: 954 / Wrong: 37 / Accuracy: 96.27% / Detect Accuracy: 99.90% / FPS: 2.01 
+Correct: 950 / Wrong: 43 / Accuracy: 95.67% / Detect Accuracy: 99.90% / FPS: 1.84 
 Radius: 20 / Neighbours: 10 
-
-Correct: 743 / Wrong: 248 / Accuracy: 74.97% / Detect Accuracy: 99.90% / FPS: 17.15 
-Radius: 30 / Neighbours: 1 
-
-Correct: 799 / Wrong: 192 / Accuracy: 80.63% / Detect Accuracy: 99.90% / FPS: 16.51 
-Radius: 30 / Neighbours: 2 
-
-Correct: 891 / Wrong: 100 / Accuracy: 89.91% / Detect Accuracy: 99.90% / FPS: 15.94 
-Radius: 30 / Neighbours: 3 
-
-Correct: 915 / Wrong: 76 / Accuracy: 92.33% / Detect Accuracy: 99.90% / FPS: 13.00 
-Radius: 30 / Neighbours: 5 
-
-Correct: 935 / Wrong: 56 / Accuracy: 94.35% / Detect Accuracy: 99.90% / FPS: 7.46 
-Radius: 30 / Neighbours: 7 
-
-Correct: 929 / Wrong: 62 / Accuracy: 93.74% / Detect Accuracy: 99.90% / FPS: 5.17 
-Radius: 30 / Neighbours: 8 
-
-Correct: 944 / Wrong: 47 / Accuracy: 95.26% / Detect Accuracy: 99.90% / FPS: 2.49 
-Radius: 30 / Neighbours: 10 
 

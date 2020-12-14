@@ -233,7 +233,7 @@ int main(int argc, const char **argv)
         //imshow("Largest face", largestFace);
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
         imwrite("demo_cropped.jpg", croppedFace);
-        Mat processedImage = prepareImage(croppedFace);
+        Mat processed_image = prepareImage(croppedFace);
         return 1;
     }
 
@@ -262,7 +262,8 @@ int main(int argc, const char **argv)
                 break;
             }
             // Check whether the person in frame should be taught to the model
-            res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
+            res = stmt->executeQuery("SELECT person_id FROM "
+                                    + table + " WHERE id=1");
             while (res->next()) {
                 int temp_counter = photo_delay;
                 while(temp_counter > 0){
@@ -299,14 +300,16 @@ int main(int argc, const char **argv)
                 break;
             }
             
-            Mat processedImage = prepareImage(croppedFace);
+            Mat processed_image = prepareImage(croppedFace);
             if(teach)
             {   
                 if(photo_amount_counter < photo_amount)
                 {
                     photo_amount_counter += 1;
-                    cout << "Teach face with id " << std::to_string(person_id) << ". Photo " << photo_amount_counter << " out of " << photo_amount << endl;
-                    updateModel(processedImage, person_id);
+                    cout << "Teach face with id " << std::to_string(person_id)
+                         << ". Photo " << photo_amount_counter 
+                         << " out of " << photo_amount << endl;
+                    updateModel(processed_image, person_id);
                 } 
                 else 
                 {
@@ -321,7 +324,7 @@ int main(int argc, const char **argv)
                 // Detect who the person is
                 int id = -1;
                 double confidence = 0.0;
-                model->predict(processedImage, id, confidence);
+                model->predict(processed_image, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 // Replace this part with writing to database when we get to there
                 if (confidence > confidence_limit)
@@ -372,11 +375,11 @@ int main(int argc, const char **argv)
             {
 
                 int id = c - 48; // convert ascii to numbers
-                Mat processedImage = prepareImage(croppedFace);
+                Mat processed_image = prepareImage(croppedFace);
                 if (!silent)
                 {
                     imshow("The face that would we teached", croppedFace);
-                    imshow("Processed version", processedImage);
+                    imshow("Processed version", processed_image);
                 }
                 cout << "Teach this with id " << std::to_string(id) << "?" << endl;
                 // Wait for the user to confirm the teaching, if space is pressed tech, otherwise discard
@@ -384,7 +387,7 @@ int main(int argc, const char **argv)
                 if (c2 == 32)
                 {
                     cout << "Teach face with id " << std::to_string(id) << endl;
-                    updateModel(processedImage, id);
+                    updateModel(processed_image, id);
                 }
                 else
                 {
@@ -394,10 +397,10 @@ int main(int argc, const char **argv)
             else if (c == 100) // letter d
             {
                 // Detect who the person is
-                Mat processedImage = prepareImage(croppedFace);
+                Mat processed_image = prepareImage(croppedFace);
                 int id = -1;
                 double confidence = 0.0;
-                model->predict(processedImage, id, confidence);
+                model->predict(processed_image, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 cout << resultMessage << endl;
             }
@@ -787,8 +790,8 @@ static void test(string trainCsv, string testCsv)
         //Mat croppedFace(cleanImg, Rect(cvRound(r.x * scale), cvRound(r.y * scale), r.width * scale - 1, r.height * scale - 1));
         
         //imshow("Face after cropping", croppedFace);
-        //Mat processedImage = prepareImage(croppedFace);
-        //imshow("The face ", processedImage);
+        //Mat processed_image = prepareImage(croppedFace);
+        //imshow("The face ", processed_image);
         // And before this shit breaks. Plz fix
         //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         updateModel(croppedFace, labels[i]);
