@@ -1,12 +1,20 @@
 #/bin/bash
 
 #./detect.o 0 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --silent --radius=1 --neighbours=3
-
-for radius in 10 14 20
+radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30) #1-5 done already
+neighbours_values=( 1 2 3 4 5 6 7 8 9 10 )
+total=$((${#radius_values[@]}*${#neighbours_values[@]}))
+start=`date +%s`
+loops=0
+for radius in "${radius_values[@]}"
 do
-    for neighbours in 4 5 10
+    for neighbours in "${neighbours_values[@]}"
     do
+        loops=$(($loops+1))
+        echo "Round $loops out of $total"
         # $ "run --radius=$radius --neighbours=$neighbours"
         ./detect.o 0 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --silent --radius=$radius --neighbours=$neighbours
+        current=`date +%s`
+	echo "Time left: $((($current - $start)/loops*(total-loops)))s"
     done
 done

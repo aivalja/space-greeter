@@ -710,7 +710,7 @@ static void test(string trainCsv, string testCsv)
     // Initiate history 
     std::deque<int> history;
 
-    // Read in the data. This can fail if no valid
+    // Read in the training data. This can fail if no valid
     // input filename is given.
     try
     {
@@ -722,6 +722,7 @@ static void test(string trainCsv, string testCsv)
         // nothing more we can do
         exit(1);
     }
+
     // Read in the test data
     try
     {
@@ -733,19 +734,20 @@ static void test(string trainCsv, string testCsv)
         // nothing more we can do
         exit(1);
     }
+
     // Quit if there are not enough images for this demo.
     if (images.size() < 1)
     {
         string errorMessage = "This demo needs at least 1 image to work. Please add more images to your data set!";
         CV_Error(Error::StsError, errorMessage);
     }
+
     // Get the height from the first image. We'll need this
     // later in code to reshape the images to their original
     // size:
     int missedFaces = 0;
     int totalFaces = images.size();
     double progress = 0.0;
-    int height = images[0].rows;
     cout << format("Starting to teach %d images.", totalFaces) << endl;
     for (int i = 0; i < images.size(); i++)
     {
@@ -770,6 +772,8 @@ static void test(string trainCsv, string testCsv)
         //imshow("Face before cropping", frame1);
         //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
         // HERE BE CRASHES
+
+        // Not sure if this works correctly, results in extremely poor accuracy. Maybe replace with just normal scale?
         double fixed_scale;
         if(largestRect.height/min_height < scale)
         {
@@ -797,6 +801,8 @@ static void test(string trainCsv, string testCsv)
         updateModel(croppedFace, labels[i]);
     }
     cout << endl;
+
+    // Training done, let's start testing
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
@@ -899,12 +905,26 @@ static void test(string trainCsv, string testCsv)
     double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
     cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
     cout << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours) << endl; 
-    std::ofstream log_file("log.txt", std::ios::app);
-    std::ofstream log_csv("log.csv", std::ios::app);
+    bool first = 1;
+    std::string line;
+    // Chech if log is empty, if so print "headline"
     
-    // log_file.open("log.txt", std::ios::app);
-    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f \n", correct, wrong, accuracy, face_detect_accuracy, averageFps);
-    log_file << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours);
+    std::ifstream log_csv_test("log.csv", std::ios::in);
+    
+
+    if(std::getline(log_csv_test, line)){
+        first = 0;
+    }
+    log_csv_test.close();
+    
+    std::ofstream log_csv("log.csv", std::ios::app);
+    std::ofstream log_file("log.txt", std::ios::app);
+    
+
+    if(first){
+        log_csv << format("Correct;Wrong;Accuracy;Detect Accuracy;FPS;Radius;Neighbours\n");
+    }
+    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f / Radius: %d / Neighbours: %d \n", correct, wrong, accuracy, face_detect_accuracy, averageFps, radius, neighbours);    
     log_csv << format("%d; %d; %.2f%%; %.2f%%; %.2f; %d; %d \n", correct, wrong, accuracy, face_detect_accuracy, averageFps, radius, neighbours);
     log_csv.close();
     log_file.close();
