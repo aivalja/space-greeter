@@ -1,8 +1,7 @@
 #/bin/bash
 
 #./detect.o 0 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --silent --radius=1 --neighbours=3
-#radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30) #1-22 done already
-radius_values=(24 28 30) #1-22 done already
+radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30) #1-22 done already
 neighbours_values=( 1 2 3 4 5 6 7 8 9 10 )
 total=$((${#radius_values[@]}*${#neighbours_values[@]}))
 start=`date +%s`
