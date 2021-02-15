@@ -94,6 +94,7 @@ int min_height;
 double confidence_limit = 30;
 bool silent = false;
 bool demo = false;
+bool single = false;
 
 sql::Driver *driver;
 sql::Connection *con;
@@ -101,6 +102,41 @@ sql::Statement *stmt;
 sql::ResultSet *res;
 int main(int argc, const char **argv)
 {
+
+    
+    Mat frame, image;
+    string inputName;
+
+    cv::CommandLineParser parser(argc, argv,
+                                 "{help h||}"
+                                 "{cascade|data/haarcascades/haarcascade_frontalface_alt.xml|}"
+                                 "{nested-cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|}"
+                                 "{scale|1|}{try-flip||}{@filename||}"
+                                 "{test||}"
+                                 "{scan||}"
+                                 "{silent||}"
+                                 "{demo||}"
+                                 "{single||}"
+                                 "{radius|1|}{neighbours|8|}{min_width|1|}{min_height|1|}"
+                                 "{train-csv|train.csv|}"
+                                 "{test-csv|test.csv|}");
+    if (parser.has("help"))
+    {
+        help();
+        return 0;
+    }
+
+    // No image shown
+    if (parser.has("silent"))
+    {
+        silent = true;
+    }
+
+    if(parser.has("single"))
+    {
+        single = true;
+    }
+
     try {
         
 
@@ -123,43 +159,16 @@ int main(int argc, const char **argv)
         
 
     } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        if(!silent)
+        {
+            cout << "# ERR: SQLException in " << __FILE__;
+            cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+            cout << "# ERR: " << e.what();
+            cout << " (MySQL error code: " << e.getErrorCode();
+            cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        }
     }
-
     
-    Mat frame, image;
-    string inputName;
-
-    cv::CommandLineParser parser(argc, argv,
-                                 "{help h||}"
-                                 "{cascade|data/haarcascades/haarcascade_frontalface_alt.xml|}"
-                                 "{nested-cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|}"
-                                 "{scale|1|}{try-flip||}{@filename||}"
-                                 "{test||}"
-                                 "{scan||}"
-                                 "{silent||}"
-                                 "{demo||}"
-                                 "{radius|1|}{neighbours|8|}{min_width|1|}{min_height|1|}"
-                                 "{train-csv|train.csv|}"
-                                 "{test-csv|test.csv|}");
-    if (parser.has("help"))
-    {
-        help();
-        return 0;
-    }
-
-    // No image shown
-    if (parser.has("silent"))
-    {
-        silent = true;
-    }
-
-
-
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
     scale = parser.get<double>("scale");
@@ -249,11 +258,14 @@ int main(int argc, const char **argv)
                 try{
                     con->reconnect();
                 } catch (sql::SQLException &e) {
-                    cout << "# ERR: SQLException in " << __FILE__;
-                    cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-                    cout << "# ERR: " << e.what();
-                    cout << " (MySQL error code: " << e.getErrorCode();
-                    cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+                    if(!silent)
+                    {
+                        cout << "# ERR: SQLException in " << __FILE__;
+                        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+                        cout << "# ERR: " << e.what();
+                        cout << " (MySQL error code: " << e.getErrorCode();
+                        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+                    }
                 }
             }
             capture >> frame;
@@ -817,7 +829,7 @@ static void test(string trainCsv, string testCsv)
         int predictedLabel = -1;
         double confidence = 0.0;
         
-        if(testLabels[i] != testLabels[i-1])
+        if((testLabels[i] != testLabels[i-1]) || (single))
         {
             start = std::chrono::high_resolution_clock::now();
         }
@@ -838,19 +850,21 @@ static void test(string trainCsv, string testCsv)
         //imshow("Face before cropping", frame1);
         //cout << Rect(cvRound(largestRect.x * scale), cvRound(largestRect.y * scale), largestRect.width * scale - 1, largestRect.height * scale - 1) << endl;
         double fixed_scale;
-        if(largestRect.height/min_height < scale)
-        {
-            fixed_scale = 1.0*largestRect.height/min_height;
-        }
-        else if(largestRect.width/min_width < scale)
-        {
-            fixed_scale = 1.0*largestRect.width/min_width;
-        }
-        else
-        {
-            fixed_scale = scale;
-        }
+        // This is probably broken, so skipping it for now
+	    //if(largestRect.height/min_height < scale)
+        //{
+        //    fixed_scale = 1.0*largestRect.height/min_height;
+        //}
+        //else if(largestRect.width/min_width < scale)
+        //{
+        //    fixed_scale = 1.0*largestRect.width/min_width;
+        //}
+        //else
+        //{
+        //    fixed_scale = scale;
+        //}
 
+	    fixed_scale = scale;
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
 
         predictedLabel = predictFace(croppedFace);
@@ -858,7 +872,7 @@ static void test(string trainCsv, string testCsv)
         confidence = predictConfidence(croppedFace, predictedLabel);
 
         
-        if(testLabels[i] != testLabels[i+1]){
+        if((testLabels[i] != testLabels[i+1]) || (single)){
             auto finish = std::chrono::high_resolution_clock::now();
             double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
             
@@ -892,7 +906,7 @@ static void test(string trainCsv, string testCsv)
 
             string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
             elapsed += duration;
-            // cout << resultMessage << endl;
+            //cout << resultMessage << endl;
             history.clear();
         }
 
