@@ -1,7 +1,6 @@
 #/bin/bash
 
-#radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30)
-radius_values=(8 10 14 18 22 24 28 30) # 1-7 done already
+radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30)
 neighbours_values=( 1 2 3 4 5 6 7 8 9 10 )
 total=$((${#radius_values[@]}*${#neighbours_values[@]}))
 start=`date +%s`
