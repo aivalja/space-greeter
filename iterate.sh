@@ -12,7 +12,7 @@ do
         loops=$(($loops+1))
         echo "Round ${loops}/${total}"
         # $ "run --radius=$radius --neighbours=$neighbours"
-        ./detect.o 0 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --silent --single --radius=$radius --neighbours=$neighbours
+        ./detect.o 0 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --silent --radius=$radius --neighbours=$neighbours
         current=`date +%s`
 	left_total_s=$((($current - $start)/loops*(total-loops)))
 	left_h=$(($left_total_s/3600))
