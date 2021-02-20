@@ -1,16 +1,24 @@
-#import data somehow to _data_
-library(readxl)
-data <- read_excel("test_data.xlsx", sheet ="All results combined")
-#Change this
-data<-transform(data,Accuracy...4 = (Accuracy...4 - min(Accuracy...4))/ (max(Accuracy...4) - min(Accuracy...4)))
-data<-transform(data,FPS...1 = (FPS...1 - min(FPS...1))/ (max(FPS...1) - min(FPS...1)))
-data$eval<-data$Accuracy...4*data$FPS...1
-data$Neighbours<-data$Neighbours...3
-data$Radius<-data$Radius...2
+dataset<-"dup1" #dup1/dup2/fb/all
+single<-TRUE
+column_compared<-"Radius" #Neighbours/Radius
 
-a <- data$Neighbours...3
-a_string<-"Neighbours"
-name_of_file<-"chart_Neighbours_vs_evaluation_formula.svg"
+if(single){
+  folder<-"single_face"
+} else {
+  folder<-"multiple_faces"
+}
+
+data <- read.csv(paste("test_results/",folder,"/log_",dataset,".csv",sep=""), header = TRUE, sep=";")
+#Change this
+data$Accuracy<-as.numeric(sub("%","",data$Accuracy))/100
+data$Detect.Accuracy<-as.numeric(sub("%","",data$Detect.Accuracy))/100
+data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
+data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
+data$eval<-data$Accuracy*data$FPS
+
+a <- data[[column_compared]]
+a_string<-column_compared
+name_of_file<-paste("chart_",column_compared,"_vs_eval_",folder,".svg",sep="")
 x<-a
 degree<-3
 
@@ -35,7 +43,7 @@ df2 <- data_summary(data,varname="eval",groupnames=c(a_string))
 avg <- df2$eval
 sdev <- df2$sd
 # Change this
-long <- df2$Neighbours
+long <- df2[[column_compared]]
 
 svg(filename=name_of_file, width=6.75, height=5)
 plot(long, avg,
