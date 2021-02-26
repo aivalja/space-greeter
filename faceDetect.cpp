@@ -501,7 +501,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     {
         gray = img;
     }
-    Size tmp_size = gray.size();
+    /* Size tmp_size = gray.size();
     if(tmp_size.height/min_height < scale)
     {
         scale = 1.0*tmp_size.height/min_height;
@@ -509,7 +509,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     else if(tmp_size.width/min_width < scale)
     {
         scale = 1.0*tmp_size.width/min_width;
-    }
+    } */
 
     double fx = 1 / scale;
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
@@ -787,7 +787,7 @@ static void test(string trainCsv, string testCsv)
 
         // Not sure if this works correctly, results in extremely poor accuracy. Maybe replace with just normal scale?
         double fixed_scale;
-        if(largestRect.height/min_height < scale)
+        /* if(largestRect.height/min_height < scale)
         {
             fixed_scale = 1.0*largestRect.height/min_height;
         }
@@ -798,8 +798,9 @@ static void test(string trainCsv, string testCsv)
         else
         {
             fixed_scale = scale;
-        }
+        } */
 
+        fixed_scale = scale;
         Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
         
         //cout << croppedFace << endl;
@@ -918,7 +919,7 @@ static void test(string trainCsv, string testCsv)
     double averageFps = testImages.size() / elapsed;
     double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
     cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
-    cout << format("Radius: %d / Neighbours: %d \n\n", radius, neighbours) << endl; 
+    cout << format("Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d \n\n", radius, neighbours, scale, cascadeName.c_str(), single) << endl; 
     bool first = 1;
     std::string line;
     // Chech if log is empty, if so print "headline"
@@ -936,10 +937,10 @@ static void test(string trainCsv, string testCsv)
     
 
     if(first){
-        log_csv << format("Correct;Wrong;Accuracy;Detect Accuracy;FPS;Radius;Neighbours\n");
+        log_csv << format("Correct;Wrong;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Scale;Cascade;Single\n");
     }
-    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f / Radius: %d / Neighbours: %d \n", correct, wrong, accuracy, face_detect_accuracy, averageFps, radius, neighbours);    
-    log_csv << format("%d; %d; %.2f%%; %.2f%%; %.2f; %d; %d \n", correct, wrong, accuracy, face_detect_accuracy, averageFps, radius, neighbours);
+    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.4f / Detect Accuracy: %.4f / FPS: %.2f / Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d \n", correct, wrong, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single);    
+    log_csv << format("%d;%d;%.4f;%.4f;%.2f;%d;%d;%.1f;%s;%d\n", correct, wrong, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single);
     log_csv.close();
     log_file.close();
 }
