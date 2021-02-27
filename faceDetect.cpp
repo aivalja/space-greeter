@@ -842,7 +842,7 @@ static void test(string trainCsv, string testCsv)
         frame1.copyTo(largestFace);
         if (largestRect.width <= 0)
         {
-            cout << "No face found" << endl;
+            //cout << "No face found" << endl;
             history.push_front(0);
             continue;
         }
