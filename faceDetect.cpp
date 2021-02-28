@@ -827,6 +827,7 @@ static void test(string trainCsv, string testCsv)
     {
         progress = 1.0 * i / totalTestImages * 100;
         cout << "\r" << format("Testing progress: %.1f%", progress) << std::flush;
+        
         int predictedLabel = -1;
         double confidence = 0.0;
         
