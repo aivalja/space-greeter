@@ -95,6 +95,7 @@ double confidence_limit = 30;
 bool silent = false;
 bool demo = false;
 bool single = false;
+string dataset;
 
 sql::Driver *driver;
 sql::Connection *con;
@@ -117,6 +118,7 @@ int main(int argc, const char **argv)
                                  "{silent||}"
                                  "{demo||}"
                                  "{single||}"
+                                 "{dataset|-|}"
                                  "{radius|1|}{neighbours|8|}{min_width|1|}{min_height|1|}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
@@ -173,6 +175,7 @@ int main(int argc, const char **argv)
     nestedCascadeName = parser.get<string>("nested-cascade");
     scale = parser.get<double>("scale");
     radius = parser.get<int>("radius");
+    dataset = parser.get<string>("dataset");
     neighbours = parser.get<int>("neighbours");
     min_width = parser.get<int>("min_width");
     min_height = parser.get<int>("min_height");
@@ -823,8 +826,13 @@ static void test(string trainCsv, string testCsv)
     int totalPersons = 0;
     int lastPerson = -1;
     auto start = std::chrono::high_resolution_clock::now();
+    
+    int count = 0;
     for (int i = 0; i < testImages.size(); i++)
     {
+        if(testLabels[i] != testLabels[i+1]){
+            count++;
+        }
         progress = 1.0 * i / totalTestImages * 100;
         cout << "\r" << format("Testing progress: %.1f%", progress) << std::flush;
         
@@ -845,8 +853,46 @@ static void test(string trainCsv, string testCsv)
         {
             //cout << "No face found" << endl;
             history.push_front(0);
-            wrong++;
-            continue;
+            if(testLabels[i] == testLabels[i+1]){
+                continue;
+            } else {
+                auto finish = std::chrono::high_resolution_clock::now();
+                double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
+                
+                int max = 0;
+                int most_common = -1;
+                std::map<int,int> m;
+                for (auto vi = history.begin(); vi != history.end(); vi++) {
+                    m[*vi]++;
+                    if (m[*vi] > max) {
+                        if (predictedLabel == testLabels[i])
+                        {
+                            //correct++;
+                        }
+                        else
+                        {
+                            //wrong++;
+                        }
+                        max = m[*vi]; 
+                        most_common = *vi;
+                        }
+                }
+                
+                if (most_common == testLabels[i])
+                {
+                    correct++;
+                }
+                else
+                {
+                    wrong++;
+                }
+
+                string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
+                elapsed += duration;
+                //cout << resultMessage << endl;
+                history.clear();
+                continue;
+            }
         }
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);
         //cout << data << endl;
@@ -920,8 +966,8 @@ static void test(string trainCsv, string testCsv)
     double accuracy = 1.0 * correct / (correct + wrong) * 100;
     double averageFps = testImages.size() / elapsed;
     double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
-    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, face_detect_accuracy, averageFps) << endl;
-    cout << format("Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d \n\n", radius, neighbours, scale, cascadeName.c_str(), single) << endl; 
+    cout << format("\nCorrect: %d / Wrong: %d / Sum: %d / Test image count: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, correct + wrong, count, accuracy, face_detect_accuracy, averageFps) << endl;
+    cout << format("Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d / Dataset: %s \n\n", radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str()) << endl; 
     bool first = 1;
     std::string line;
     // Chech if log is empty, if so print "headline"
@@ -939,10 +985,10 @@ static void test(string trainCsv, string testCsv)
     
 
     if(first){
-        log_csv << format("Correct;Wrong;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Scale;Cascade;Single\n");
+        log_csv << format("Correct;Wrong;Test image count;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Scale;Cascade;Single;Dataset\n");
     }
-    log_file << format("Correct: %d / Wrong: %d / Accuracy: %.4f / Detect Accuracy: %.4f / FPS: %.2f / Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d \n", correct, wrong, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single);    
-    log_csv << format("%d;%d;%.4f;%.4f;%.2f;%d;%d;%.1f;%s;%d\n", correct, wrong, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single);
+    log_file << format("Correct: %d / Wrong: %d / Test image count: %d / Accuracy: %.4f / Detect Accuracy: %.4f / FPS: %.2f / Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d / Dataset: %s \n", correct, wrong, count, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str());    
+    log_csv << format("%d;%d;%d;%.4f;%.4f;%.2f;%d;%d;%.1f;%s;%d;%s\n", correct, wrong, count, accuracy/100, face_detect_accuracy/100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str());
     log_csv.close();
     log_file.close();
 }
