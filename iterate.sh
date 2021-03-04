@@ -5,7 +5,7 @@
 radius_values=(8 14)
 neighbours_values=(4 5 6 7 8 9)
 cascade_values=("lbpcascades/lbpcascade_frontalface.xml" "lbpcascades/lbpcascade_frontalface_improved.xml" "haarcascades/haarcascade_frontalface_default.xml" "haarcascades/haarcascade_frontalface_alt.xml" "haarcascades/haarcascade_frontalface_alt2.xml" "haarcascades/haarcascade_frontalface_alt_tree.xml")
-scale_values=(1 1.1 1.2 1.5 1.8 3 4 5)
+scale_values=(7.5 10 12.5 15 20 30 40 50)
 total=$((${#radius_values[@]}*${#neighbours_values[@]}*${#cascade_values[@]}*${#scale_values[@]}))
 start=`date +%s`
 loops=0
