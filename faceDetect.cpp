@@ -845,6 +845,7 @@ static void test(string trainCsv, string testCsv)
         {
             //cout << "No face found" << endl;
             history.push_front(0);
+            wrong++;
             continue;
         }
         //string data =  format("x = %d / Y = %d / width = %d / Height = %d", cvRound(largestRect.x),cvRound(largestRect.y), largestRect.width-1, largestRect.height-1);

@@ -5,3 +5,5 @@
 #Output files
 output/
 .vscode/
+.Rproj.user
+.Rproj

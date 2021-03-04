@@ -550,3 +550,16 @@ Correct: 0 / Wrong: 0 / Accuracy: -nan / Detect Accuracy: 0.0000 / FPS: inf / Ra
 Correct: 0 / Wrong: 0 / Accuracy: -nan / Detect Accuracy: 0.0000 / FPS: inf / Radius: 14 / Neighbours: 7 / Scale: 50.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 0 
 Correct: 0 / Wrong: 0 / Accuracy: -nan / Detect Accuracy: 0.0000 / FPS: inf / Radius: 14 / Neighbours: 8 / Scale: 50.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 0 
 Correct: 0 / Wrong: 0 / Accuracy: -nan / Detect Accuracy: 0.0000 / FPS: inf / Radius: 14 / Neighbours: 9 / Scale: 50.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 0 
+Correct: 1 / Wrong: 7 / Accuracy: 0.1250 / Detect Accuracy: 0.0855 / FPS: 1294.24 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 0 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 624.17 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 623.76 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 184 / Wrong: 541 / Accuracy: 0.2538 / Detect Accuracy: 0.0855 / FPS: 625.53 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 184 / Wrong: 541 / Accuracy: 0.2538 / Detect Accuracy: 0.0855 / FPS: 627.99 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 620.68 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 613.65 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 608.67 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 613.46 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 23 / Accuracy: 0.0800 / Detect Accuracy: 0.0855 / FPS: 618.12 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 734 / Accuracy: 0.0027 / Detect Accuracy: 0.0855 / FPS: 620.05 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 734 / Accuracy: 0.0027 / Detect Accuracy: 0.0855 / FPS: 618.44 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 
+Correct: 2 / Wrong: 734 / Accuracy: 0.0027 / Detect Accuracy: 0.0855 / FPS: 630.07 / Radius: 14 / Neighbours: 9 / Scale: 15.0 / Cascade: haarcascades/haarcascade_frontalface_alt_tree.xml / Single: 1 

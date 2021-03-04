@@ -551,3 +551,16 @@ Correct;Wrong;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Scale;Cascade;Singl
 0;0;-nan;0.0000;inf;14;7;50.0;haarcascades/haarcascade_frontalface_alt_tree.xml;0
 0;0;-nan;0.0000;inf;14;8;50.0;haarcascades/haarcascade_frontalface_alt_tree.xml;0
 0;0;-nan;0.0000;inf;14;9;50.0;haarcascades/haarcascade_frontalface_alt_tree.xml;0
+1;7;0.1250;0.0855;1294.24;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;0
+2;23;0.0800;0.0855;624.17;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;623.76;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+184;541;0.2538;0.0855;625.53;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+184;541;0.2538;0.0855;627.99;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;620.68;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;613.65;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;608.67;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;613.46;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;23;0.0800;0.0855;618.12;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;734;0.0027;0.0855;620.05;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;734;0.0027;0.0855;618.44;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
+2;734;0.0027;0.0855;630.07;14;9;15.0;haarcascades/haarcascade_frontalface_alt_tree.xml;1
