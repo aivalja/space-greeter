@@ -2,8 +2,8 @@
 
 #radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30)
 #neighbours_values=( 1 2 3 4 5 6 7 8 9 10 )
-radius_values=(14) #(14 8)
-neighbours_values=(9 8 7) #(9 8 7 6 5 4)
+radius_values=(8) #(14 8)
+neighbours_values=(6 5 4) #(9 8 7 6 5 4)
 cascade_values=("lbpcascades/lbpcascade_frontalface.xml" "lbpcascades/lbpcascade_frontalface_improved.xml" "haarcascades/haarcascade_frontalface_default.xml" "haarcascades/haarcascade_frontalface_alt.xml" "haarcascades/haarcascade_frontalface_alt2.xml" "haarcascades/haarcascade_frontalface_alt_tree.xml")
 scale_values=(1 1.1 1.2 1.5 1.8 2 3 4 5 7.5)
 dataset_values=("dup1" "dup2" "fb")
