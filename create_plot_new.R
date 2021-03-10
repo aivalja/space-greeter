@@ -11,7 +11,7 @@ cascade_number<-1
   #6 haarcascades/haarcascade_frontalface_alt_tree.xml
 temp_cascades <- list("lbpcascades/lbpcascade_frontalface.xml","lbpcascades/lbpcascade_frontalface_improved.xml","haarcascades/haarcascade_frontalface_default.xml","haarcascades/haarcascade_frontalface_alt.xml","haarcascades/haarcascade_frontalface_alt2.xml","haarcascades/haarcascade_frontalface_alt_tree.xml")
 cascade<- temp_cascades[cascade_number]
-column_compared<-"Scale" #Neighbours/Radius/Scale
+column_compared<-"FPS" #Neighbours/Radius/Scale
 y_axis_column<-"Accuracy" #Accuracy/FPS/eval/Detect.Accuracy
 
 #if(single){
@@ -26,9 +26,36 @@ data <- read.csv(paste("test_results/",folder,"/",log_file,".csv",sep=""), heade
 data[is.na(data)]<-0
 data$FPS[which(!is.finite(data$FPS))]<-0
 #data$Detect.Accuracy<-as.numeric(sub("%","",data$Detect.Accuracy))/100
-data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
-data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
-data$eval<-data$Accuracy*data$FPS
+#data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
+#data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
+#data$eval<-data$Accuracy*data$FPS
+write.csv(data,"data.csv")
+# THis part only for testing ####
+data2<-data[data$Scale==1.0,]
+plot(data2[[column_compared]], data2[[y_axis_column]], col="blue",
+     pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
+)
+# Make a loop using something like this for color?
+data3<-data[data$Scale==1.1,]
+points(data3[[column_compared]], data3[[y_axis_column]], col=rgb(1/1.1,1/1.1,1/1.1),
+     pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
+)
+
+data3<-data[data$Scale==1.2,]
+points(data3[[column_compared]], data3[[y_axis_column]], col="green",
+       pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
+)
+
+data3<-data[data$Scale==1.5,]
+points(data3[[column_compared]], data3[[y_axis_column]], col="green",
+       pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
+)
+
+data3<-data[data$Scale==1.8,]
+points(data3[[column_compared]], data3[[y_axis_column]], col="green",
+       pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
+)
+######
 
 a <- data[[column_compared]]
 a_string<-column_compared
