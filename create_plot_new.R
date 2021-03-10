@@ -1,4 +1,5 @@
-dataset<-"dup1" #dup1/dup2/fb
+setwd("C:/Users/anssi/Desktop/Git/space-greeter") # if on windows
+dataset<-"log" #dup1/dup2/fb
 single<-FALSE
 cascade_number<-1
   #1 lbpcascades/lbpcascade_frontalface.xml
@@ -19,7 +20,7 @@ y_axis_column<-"eval" #Accuracy/FPS/eval/Detect.Accuracy
 #}
 folder<-"multiple_faces_cascades"
 
-data <- read.csv(paste("test_results/",folder,"/log_",dataset,".csv",sep=""), header = TRUE, sep=";")
+data <- read.csv(paste("test_results/",folder,"/",dataset,".csv",sep=""), header = TRUE, sep=";")
 #Change this
 data[is.na(data)]<-0
 data$FPS[which(!is.finite(data$FPS))]<-0
