@@ -1,9 +1,9 @@
 #/bin/bash
 
-radius_values=(1 2 3 4 5 6 7 8 10 14 18 22 24 28 30)
-neighbours_values=(1 2 3 4 5 6 7 8 9 10)
+radius_values=(1 3 5 7 8 10 20 30)
+neighbours_values=(1 3 5 7 9)
 cascade_values=("lbpcascades/lbpcascade_frontalface.xml" "lbpcascades/lbpcascade_frontalface_improved.xml" "haarcascades/haarcascade_frontalface_default.xml" "haarcascades/haarcascade_frontalface_alt.xml" "haarcascades/haarcascade_frontalface_alt2.xml" "haarcascades/haarcascade_frontalface_alt_tree.xml")
-scale_values=(1 1.1 1.2 1.5 1.8 2 3 4 5 7.5)
+scale_values=(1 1.25 1.5 2 4 5 7.5)
 dataset_values=("dup1" "dup2" "fb")
 total=$((${#radius_values[@]}*${#neighbours_values[@]}*${#cascade_values[@]}*${#scale_values[@]}*${#dataset_values[@]}))
 start=`date +%s`
