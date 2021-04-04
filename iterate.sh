@@ -36,7 +36,7 @@ do
                         # Test ran before
                         loops=$(($loops+1))
                         echo "Round ${loops}/${total}"
-                        skipped+=1
+                        skipped=$((skipped+1))
                         echo "Skipped"
                     else
                         # Test not ran before
@@ -45,7 +45,7 @@ do
                         # $ "run --radius=$radius --neighbours=$neighbours"
                         ./detect.o 0 --cascade=$cascade --scale=$scale --test --silent --radius=$radius --neighbours=$neighbours --dataset=$dataset
                         current=`date +%s`
-                        left_total_s=$((($current - $start)/loops*(total-loops-skipped)))
+                        left_total_s=$((($current - $start)/(loops-skipped)*(total-loops)))
                         left_h=$(($left_total_s/3600))
                         left_min=$((($left_total_s-$left_h*3600)/60))
                         left_s=$((($left_total_s-$left_h*3600-$left_min*60)))
