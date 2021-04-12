@@ -4865,3 +4865,5 @@ Correct;Wrong;Test image count;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Sc
 700;292;992;0.7056;0.8078;17.30;30;7;7.5;haarcascades/haarcascade_frontalface_alt_tree.xml;0;fb
 711;281;992;0.7167;0.8078;6.29;30;9;7.5;haarcascades/haarcascade_frontalface_alt_tree.xml;0;fb
 155;580;250;0.2109;0.9990;16.17;1;1;1.0;lbpcascades/lbpcascade_frontalface.xml;1;dup1
+253;482;250;0.3442;0.9990;15.25;1;3;1.0;lbpcascades/lbpcascade_frontalface.xml;1;dup1
+312;423;250;0.4245;0.9990;13.32;1;5;1.0;lbpcascades/lbpcascade_frontalface.xml;1;dup1

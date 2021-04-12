@@ -10,6 +10,7 @@ total=$((${#radius_values[@]}*${#neighbours_values[@]}*${#cascade_values[@]}*${#
 start=`date +%s`
 loops=0
 test_log="test_log.txt"
+test_remaining_log="test_remaining_log.txt"
 skipped=0
 tests_arr=()
 code=""
@@ -48,10 +49,12 @@ do
                         ./detect.o 0 --cascade=$cascade --scale=$scale --test --silent --radius=$radius --neighbours=$neighbours --dataset=$dataset $single
                         current=`date +%s`
                         left_total_s=$((($current - $start)/(loops-skipped)*(total-loops)))
-                        left_h=$(($left_total_s/3600))
-                        left_min=$((($left_total_s-$left_h*3600)/60))
-                        left_s=$((($left_total_s-$left_h*3600-$left_min*60)))
-                        echo "Time left ${left_h}h ${left_min}min ${left_s}s"
+                        left_d=$(($left_total_s/(3600*24)))
+                        left_h=$((($left_total_s-$left_d*3600*24)/3600))
+                        left_min=$((($left_total_s-$left_h*3600-$left_d*3600*24)/60))
+                        left_s=$((($left_total_s-$left_h*3600-$left_min*60-$left_d*3600*24)))
+                        echo "Time left ${left_d} days ${left_h}h ${left_min}min ${left_s}s"
+                        echo $left_total_s >> $test_remaining_log
                         echo $code >> $test_log
                     fi
                 done

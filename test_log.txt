@@ -5039,3 +5039,5 @@ fb+7.5+haarcascades/haarcascade_frontalface_alt_tree.xml+30+5
 fb+7.5+haarcascades/haarcascade_frontalface_alt_tree.xml+30+7
 fb+7.5+haarcascades/haarcascade_frontalface_alt_tree.xml+30+9
 dup1+1+lbpcascades/lbpcascade_frontalface.xml+1+1+--single
+dup1+1+lbpcascades/lbpcascade_frontalface.xml+1+3+--single
+dup1+1+lbpcascades/lbpcascade_frontalface.xml+1+5+--single
