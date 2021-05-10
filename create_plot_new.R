@@ -1,30 +1,56 @@
 #setwd("C:/Users/anssi/Desktop/Git/space-greeter") # if on windows
 setwd("/home/anssi/Git/space-greeter")
 log_file<-"log"
-dataset<-"dup1" #dup1/dup2/fb
-single<-FALSE
-cascade_number<-1
+# Load dataset and fix broken values
+data <- read.csv(paste(log_file,".csv",sep=""), header = TRUE, sep=";")
+#Change this
+data[is.na(data)]<-0
+data$FPS[which(!is.finite(data$FPS))]<-0
+data$FPS[which(data$FPS>60)]<-60
+data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
+data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
+data$eval<-data$Accuracy*data$FPS
+write.csv(data,"data.csv")
+
+dataset<--1#"dup1" #dup1/dup2/fb
+single<--1
+radius<--1
+neighbours<--1
+scale<--1
+cascade_number<--1
   #1 lbpcascades/lbpcascade_frontalface.xml
   #2 lbpcascades/lbpcascade_frontalface_improved.xml
   #3 haarcascades/haarcascade_frontalface_default.xml
   #4 haarcascades/haarcascade_frontalface_alt.xml
   #5 haarcascades/haarcascade_frontalface_alt2.xml
   #6 haarcascades/haarcascade_frontalface_alt_tree.xml
-temp_cascades <- list("lbpcascades/lbpcascade_frontalface.xml","lbpcascades/lbpcascade_frontalface_improved.xml","haarcascades/haarcascade_frontalface_default.xml","haarcascades/haarcascade_frontalface_alt.xml","haarcascades/haarcascade_frontalface_alt2.xml","haarcascades/haarcascade_frontalface_alt_tree.xml")
-cascade<- temp_cascades[cascade_number]
 column_compared<-"Neighbours" #Neighbours/Radius/Scale
-y_axis_column<-"eval" #Accuracy/FPS/eval/Detect.Accuracy
-y_axis_column_2<-"FPS"#Accuracy/FPS/eval/Detect.Accuracy
-y_axis_column_3<-"Accuracy"#Accuracy/FPS/eval/Detect.Accuracy
+y_axis_column<-"Accuracy" #Accuracy/FPS/eval/Detect.Accuracy
 
-data <- read.csv(paste(log_file,".csv",sep=""), header = TRUE, sep=";")
-#Change this
-data[is.na(data)]<-0
-data$FPS[which(!is.finite(data$FPS))]<-0
-data$FPS[which(data$FPS>60)]<-60
 # Filter to include only selected dataset(s)
-data <-data[data$Dataset %in% c(dataset),]
-#data <-data[data$Cascade==cascade,]
+if(dataset!=-1){
+  data <-data[data$Dataset %in% c(dataset),]
+}
+if(cascade_number!=-1){
+  temp_cascades <- list("lbpcascades/lbpcascade_frontalface.xml","lbpcascades/lbpcascade_frontalface_improved.xml","haarcascades/haarcascade_frontalface_default.xml","haarcascades/haarcascade_frontalface_alt.xml","haarcascades/haarcascade_frontalface_alt2.xml","haarcascades/haarcascade_frontalface_alt_tree.xml")
+  cascade<- temp_cascades[cascade_number]
+  data <-data[data$Cascade==cascade,]
+}
+if(radius!=-1){
+  data <-data[data$Radius==radius,]
+}
+if(neighbours!=-1){
+  data <-data[data$Neighbours==neighbours,]
+}
+if(single!=-1){
+  data <-data[data$Single==single,]
+}
+if(scale!=-1){
+  data <-data[data$Scale==scale,]
+}
+
+
+
 
 data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
 data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
@@ -32,36 +58,12 @@ data$eval<-data$Accuracy*data$FPS
 write.csv(data,"data.csv")
 
 #fit a multivariate regression model and then test the type I SS using MANCOVA.
-fit = lm(formula = cbind(Accuracy, FPS) ~ Neighbours + Radius + Scale, data = data)
-summary(manova(fit), test="Hotelling-Lawley")
+#fit = lm(formula = cbind(Accuracy, FPS) ~ Neighbours + Radius + Scale, data = data)
+#summary(manova(fit), test="Hotelling-Lawley")
 
 # THis part only for testing ####
 #data2<-data[data$Scale==1.0,]
 data2<-data
-#plot(data2[[column_compared]], data2[[y_axis_column]], col="blue",
-#     pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
-#)
-# Make a loop using something like this for color?
-# data3<-data[data$Scale==1.1,]
-# points(data3[[column_compared]], data3[[y_axis_column]], col=rgb(1/1.1,1/1.1,1/1.1),
-#      pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
-# )
-# 
-# data3<-data[data$Scale==1.2,]
-# points(data3[[column_compared]], data3[[y_axis_column]], col="green",
-#        pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
-# )
-# 
-# data3<-data[data$Scale==1.5,]
-# points(data3[[column_compared]], data3[[y_axis_column]], col="green",
-#        pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
-# )
-# 
-# data3<-data[data$Scale==1.8,]
-# points(data3[[column_compared]], data3[[y_axis_column]], col="green",
-#        pch=19, xlab=column_compared, ylab=paste0(y_axis_column)
-# )
-######
 
 a <- data[[column_compared]]
 a_string<-column_compared
