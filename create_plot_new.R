@@ -1,5 +1,5 @@
-#setwd("C:/Users/anssi/Desktop/Git/space-greeter") # if on windows
-setwd("/home/anssi/Git/space-greeter")
+setwd("C:/Users/anssi/Desktop/Git/space-greeter") # if on windows
+#setwd("/home/anssi/Git/space-greeter")
 log_file<-"log"
 # Load dataset and fix broken values
 data <- read.csv(paste(log_file,".csv",sep=""), header = TRUE, sep=";")
@@ -7,13 +7,10 @@ data <- read.csv(paste(log_file,".csv",sep=""), header = TRUE, sep=";")
 data[is.na(data)]<-0
 data$FPS[which(!is.finite(data$FPS))]<-0
 data$FPS[which(data$FPS>60)]<-60
-data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
-data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
-data$eval<-data$Accuracy*data$FPS
-write.csv(data,"data.csv")
 
-dataset<--1#"dup1" #dup1/dup2/fb
-single<--1
+
+dataset<-"dup1"#"dup1" #dup1/dup2/fb
+single<-1
 radius<--1
 neighbours<--1
 scale<--1
@@ -25,7 +22,7 @@ cascade_number<--1
   #5 haarcascades/haarcascade_frontalface_alt2.xml
   #6 haarcascades/haarcascade_frontalface_alt_tree.xml
 column_compared<-"Neighbours" #Neighbours/Radius/Scale
-y_axis_column<-"Accuracy" #Accuracy/FPS/eval/Detect.Accuracy
+y_axis_column<-"eval" #Accuracy/FPS/eval/Detect.Accuracy
 
 # Filter to include only selected dataset(s)
 if(dataset!=-1){
@@ -48,9 +45,6 @@ if(single!=-1){
 if(scale!=-1){
   data <-data[data$Scale==scale,]
 }
-
-
-
 
 data<-transform(data,Accuracy = (Accuracy - min(Accuracy))/ (max(Accuracy) - min(Accuracy)))
 data<-transform(data,FPS = (FPS - min(FPS))/ (max(FPS) - min(FPS)))
