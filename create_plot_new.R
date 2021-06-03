@@ -7,6 +7,7 @@ data <- read.csv(paste(log_file,".csv",sep=""), header = TRUE, sep=";")
 data[is.na(data)]<-0
 data$FPS[which(!is.finite(data$FPS))]<-0
 data$FPS[which(data$FPS>60)]<-60
+write.csv(data,"data.csv")
 
 
 dataset<-"dup1"#"dup1" #dup1/dup2/fb

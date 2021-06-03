@@ -9,4 +9,4 @@ output/
 space-greeter.Rproj
 .RData
 .Rhistory
-data.csv
+*.csv
