@@ -272,6 +272,7 @@ int main(int argc, const char **argv)
                 }
             }
             capture >> frame;
+            auto start = std::chrono::high_resolution_clock::now();
             if (frame.empty())
             {
                 break;
@@ -353,6 +354,9 @@ int main(int argc, const char **argv)
                     stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
                     cout << "Recognized, status: 1, person:" + std::to_string(id) + ", confidence: " + std::to_string(confidence) << endl;
                 }
+                auto finish = std::chrono::high_resolution_clock::now();
+                double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000.0;
+                cout << "Total duration:" + std::to_string(std::round(duration)) + "ms" << endl;
             }
         }
     }

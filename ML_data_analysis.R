@@ -40,6 +40,7 @@ test_data$Cascade[which(test_data$Cascade=="haarcascades/haarcascade_frontalface
 if(dataset!=-1){
   test_data <-test_data[test_data$Dataset %in% c(dataset),]
 }
+test_data <-test_data[test_data$Single==1,]
 test_data <- test_data[c("Neighbours","Radius","Scale","Cascade","Accuracy","FPS")]
 test_data[,] <- sapply(test_data[,], as.numeric)
 original_data<-test_data
@@ -52,8 +53,8 @@ test_data <- as.data.frame(lapply(test_data, normalize))
 test_data$eval<-test_data$Accuracy*test_data$FPS
 
 #Change this
-test_data$Measured <- test_data$Accuracy
-original_data$Measured <- test_data$Accuracy
+test_data$Measured <- test_data$eval
+original_data$Measured <- test_data$eval
 
 test_data <- as.data.frame(lapply(test_data, normalize))
 cutoff<-floor(nrow(test_data)*0.8)
@@ -88,4 +89,4 @@ d1$Neighbours <- d1_normalized$Neighbours* abs(diff(range(d1$Neighbours))) + min
 d1$Radius <- d1_normalized$Radius* abs(diff(range(d1$Radius))) + min(d1$Radius)
 d1$Scale <- d1_normalized$Scale* abs(diff(range(d1$Scale))) + min(d1$Scale)
 d1$Cascade <- d1_normalized$Cascade* abs(diff(range(d1$Cascade))) + min(d1$Cascade)
-d1$eval <- d1_normalized$eval
+d1$eval <- d1_normalized$eval*abs(diff(range(d1$eval))) + min(d1$eval)
