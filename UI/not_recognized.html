@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="styles.css">
+<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+</head>
+<body>
+
+<script>
+    var refreshId = setInterval(function(){
+        $.getJSON("poll.php", function(result){
+            console.log(result);
+            if (result == 0) {
+                document.getElementById("recognized").style.display = "none";
+                document.getElementById("not_recognized").style.display = "block";
+
+            }else if (result !=  2){
+                console.log(result);
+                $.ajax({
+                    type: 'post',
+                    url:"get_user.php",
+                    data: {
+                       result
+                    },
+                    success: function(nick) {
+                        console.log(nick);
+                        document.getElementById("guess").textContent = "Are you" + nick + "?";
+                        document.getElementById("hidden_data").value = result;
+
+                    }
+              });
+                document.getElementById("recognized").style.display = "block";
+                document.getElementById("not_recognized").style.display = "none";
+            }
+        });
+    }, 3000);
+</script>
+
+<div id = "not_recognized" style="display:block;">
+    <h1 id="headline">Do you want to participiate in our face recognition study?</h1>
+    <h1 id = "headline"> Note that if you have already typed your nick once please type the same nick and check the checkbox</h1>
+
+    <div class="whole">
+    <div>
+    <h2>If you do, enter your nickname and press the submit button below.</h2>
+    <h2>After clicking the button, the camera will start taking pictures. </h2>
+    <h2>Please stand still and look at the camera. </h2>
+
+    &nbsp;
+    &nbsp;
+    <form action="send.php" method="post">
+
+    Nick: <input type="text" name="nick"><br>
+    I have account already<input type="checkbox" name="alreadyhasaccount" value="Yes" /><br>
+    <input type="submit" value="Submit" onclick="clicked()"><br/>
+
+    </div>
+    </form>
+    </div>
+</div>
+<div id="recognized"  style="display:none;">
+        <h1>You have been recognized!</h1>
+        <h1 id="guess"></h1>
+
+        <form action="validate.php" method="POST">
+            <input id="hidden_data" type="hidden" name="user_id" value=""/>
+            <input type="submit" value="yes" name="yes"/>
+            <input type="submit" value="no" name="no"/>
+        </form>
+
+</div>
+</body>
+</html>

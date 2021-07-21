@@ -25,8 +25,8 @@
 #include <deque>
 using std::cout;
 using std::endl;
-using std::vector;
 using std::string;
+using std::vector;
 using namespace cv;
 using namespace cv::face;
 
@@ -56,7 +56,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
 Rect getLargestRect(vector<Rect> images);
 
 static void readCsv(const string &filename, vector<Mat> &images,
-                     vector<int> &labels, char separator);
+                    vector<int> &labels, char separator);
 
 static void loadModel();
 
@@ -72,10 +72,12 @@ static Mat prepareImage(Mat image);
 
 static void test(string trainCsv, string testCsv);
 
-
 Ptr<FaceRecognizer> model;
 string cascadeName;
 string nestedCascadeName;
+bool tryflip;
+CascadeClassifier cascade, nestedCascade;
+double scale;
 string modelFile = "faces.yml";
 string database = "recog";
 string table = "test";
@@ -85,9 +87,16 @@ string database_password = "password";
 int photo_delay = 5;
 int photo_amount = 3;
 int photo_amount_counter = 0;
+int radius;
+int neighbours;
+int min_width;
+int min_height;
 double confidence_limit = 30;
 int history_length = 5;
 bool silent = false;
+bool demo = false;
+bool single = false;
+string dataset;
 
 sql::Driver *driver;
 sql::Connection *con;
@@ -95,40 +104,9 @@ sql::Statement *stmt;
 sql::ResultSet *res;
 int main(int argc, const char **argv)
 {
-    try {
-        
-
-        /* Create a connection */
-        driver = get_driver_instance();
-        con = driver->connect("tcp://127.0.0.1:3306", database_user, database_password);
-        /* Connect to the MySQL database */
-        //con->setSchema("recog");
-
-        stmt = con->createStatement();
-        stmt->execute("USE " + database);
-        stmt->execute("DELETE FROM " + table + " WHERE id=0");
-        stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 42)");
-        res = stmt->executeQuery("SELECT status FROM " + table + " WHERE id=0");
-        while (res->next()) {
-            cout << res->getString("status") << endl;
-        }
-        delete res;
-        stmt->execute("DELETE FROM " + table + " WHERE id=0");
-        
-
-    } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
-    }
-    
     Mat frame, image;
     string inputName;
-    bool tryflip;
-    CascadeClassifier cascade, nestedCascade;
-    double scale;
+
     cv::CommandLineParser parser(argc, argv,
                                  "{help h||}"
                                  "{cascade|data/haarcascades/haarcascade_frontalface_alt.xml|}"
@@ -137,6 +115,10 @@ int main(int argc, const char **argv)
                                  "{test||}"
                                  "{scan||}"
                                  "{silent||}"
+                                 "{demo||}"
+                                 "{single||}"
+                                 "{dataset|-|}"
+                                 "{radius|1|}{neighbours|8|}{min_width|1|}{min_height|1|}"
                                  "{train-csv|train.csv|}"
                                  "{test-csv|test.csv|}");
     if (parser.has("help"))
@@ -151,15 +133,55 @@ int main(int argc, const char **argv)
         silent = true;
     }
 
-    model = LBPHFaceRecognizer::create(1, 4, 8, 8); // the second number has great impact on performance
-    loadModel();
+    if (parser.has("single"))
+    {
+        single = true;
+    }
 
+    try
+    {
+
+        /* Create a connection */
+        driver = get_driver_instance();
+        con = driver->connect("tcp://127.0.0.1:3306", database_user, database_password);
+        /* Connect to the MySQL database */
+        //con->setSchema("recog");
+
+        stmt = con->createStatement();
+        stmt->execute("USE " + database);
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+        stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 42)");
+        res = stmt->executeQuery("SELECT status FROM " + table + " WHERE id=0");
+        while (res->next())
+        {
+            cout << res->getString("status") << endl;
+        }
+        delete res;
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+    }
+    catch (sql::SQLException &e)
+    {
+        if (!silent)
+        {
+            cout << "# ERR: SQLException in " << __FILE__;
+            cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+            cout << "# ERR: " << e.what();
+            cout << " (MySQL error code: " << e.getErrorCode();
+            cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        }
+    }
 
     cascadeName = parser.get<string>("cascade");
     nestedCascadeName = parser.get<string>("nested-cascade");
     scale = parser.get<double>("scale");
+    radius = parser.get<int>("radius");
+    dataset = parser.get<string>("dataset");
+    neighbours = parser.get<int>("neighbours");
+    min_width = parser.get<int>("min_width");
+    min_height = parser.get<int>("min_height");
     if (scale < 1)
         scale = 1;
+
     tryflip = parser.has("try-flip");
     inputName = parser.get<string>("@filename");
     if (!parser.check())
@@ -167,6 +189,10 @@ int main(int argc, const char **argv)
         parser.printErrors();
         return 0;
     }
+
+    model = LBPHFaceRecognizer::create(radius, neighbours, 8, 8); // the second number has great impact on performance
+    loadModel();
+
     //if (!nestedCascade.load(samples::findFileOrKeep(nestedCascadeName)))
     //    std::cerr << "WARNING: Could not load classifier cascade for nested objects" << endl;
     if (!cascade.load(samples::findFile(cascadeName)))
@@ -186,7 +212,7 @@ int main(int argc, const char **argv)
     VideoCapture capture(camera);
     if (inputName.empty() || (isdigit(inputName[0]) && inputName.size() == 1))
     {
-        
+
         if (!capture.isOpened())
         {
             cout << "Capture from camera #" << camera << " didn't work" << endl;
@@ -205,6 +231,24 @@ int main(int argc, const char **argv)
             }
         }
     }
+
+    if (parser.has("demo"))
+    {
+        demo = 1;
+        Mat demoImage = imread("demo.jpg", IMREAD_COLOR);
+        imshow("Demo image original", demoImage);
+        Mat frame1 = demoImage.clone();
+        Mat largestFace;
+        vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+        Rect largestRect = getLargestRect(images);
+        frame1.copyTo(largestFace);
+        //imshow("Largest face", largestFace);
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x), cvRound(largestRect.y), largestRect.width - 1, largestRect.height - 1));
+        imwrite("demo_cropped.jpg", croppedFace);
+        Mat processed_image = prepareImage(croppedFace);
+        return 1;
+    }
+
     int teach = 0;
     int person_id = 0;
     if (parser.has("scan") && capture.isOpened())
@@ -219,33 +263,42 @@ int main(int argc, const char **argv)
         cout << "Scanning started" << endl;
         for (;;)
         {
-            if(!con->isValid()){
+            if (!con->isValid())
+            {
                 cout << "Database connection invalid, attempting to reconnect..." << endl;
-                try{
+                try
+                {
                     con->reconnect();
-                } catch (sql::SQLException &e) {
-                    cout << "# ERR: SQLException in " << __FILE__;
-                    cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-                    cout << "# ERR: " << e.what();
-                    cout << " (MySQL error code: " << e.getErrorCode();
-                    cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+                }
+                catch (sql::SQLException &e)
+                {
+                    if (!silent)
+                    {
+                        cout << "# ERR: SQLException in " << __FILE__;
+                        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+                        cout << "# ERR: " << e.what();
+                        cout << " (MySQL error code: " << e.getErrorCode();
+                        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+                    }
                 }
             }
             int max = 0;
             int most_common = -1;
-            std::map<int,int> m;
-            for (auto vi = history.begin(); vi != history.end(); vi++) {
+            std::map<int, int> m;
+            for (auto vi = history.begin(); vi != history.end(); vi++)
+            {
                 m[*vi]++;
-                if (m[*vi] > max) {
-                    max = m[*vi]; 
+                if (m[*vi] > max)
+                {
+                    max = m[*vi];
                     most_common = *vi;
                 }
             }
 
             cout << format("Median detection past %d images is %d", history.size(), most_common) << endl;
             capture >> frame;
-
-            if(most_common == 0)
+            auto start = std::chrono::high_resolution_clock::now();
+            if (most_common == 0)
             {
                 stmt->execute("DELETE FROM " + table + " WHERE id=0");
                 stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
@@ -254,23 +307,22 @@ int main(int argc, const char **argv)
             {
                 stmt->execute("DELETE FROM " + table + " WHERE id=2");
                 //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
-
             }
             else if (most_common > 0)
             {
                 stmt->execute("DELETE FROM " + table + " WHERE id=2");
                 // This one has confidence, how to calculate it?
                 //stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(most_common) + ", " + std::to_string(confidence) + ", 1)");
-                stmt->execute("INSERT INTO " + table + "(id, person_id, status) VALUES (2, " + std::to_string(most_common)+ ", 1)");
-            
+                stmt->execute("INSERT INTO " + table + "(id, person_id, status) VALUES (2, " + std::to_string(most_common) + ", 1)");
             }
-
 
             // Check whether the person in frame should be taught to the model
             res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
-            while (res->next()) {
+            while (res->next())
+            {
                 int temp_counter = photo_delay;
-                while(temp_counter > 0){
+                while (temp_counter > 0)
+                {
                     cout << temp_counter << endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                     temp_counter = temp_counter - 1;
@@ -307,17 +359,19 @@ int main(int argc, const char **argv)
             {
                 break;
             }
-            
-            Mat processedImage = prepareImage(croppedFace);
-            if(teach)
-            {   
-                if(photo_amount_counter < photo_amount)
+
+            Mat processed_image = prepareImage(croppedFace);
+            if (teach)
+            {
+                if (photo_amount_counter < photo_amount)
                 {
                     photo_amount_counter += 1;
-                    cout << "Teach face with id " << std::to_string(person_id) << ". Photo " << photo_amount_counter << " out of " << photo_amount << endl;
-                    updateModel(processedImage, person_id);
-                } 
-                else 
+                    cout << "Teach face with id " << std::to_string(person_id)
+                         << ". Photo " << photo_amount_counter
+                         << " out of " << photo_amount << endl;
+                    updateModel(processed_image, person_id);
+                }
+                else
                 {
                     saveModel();
                     teach = 0;
@@ -325,26 +379,27 @@ int main(int argc, const char **argv)
                     photo_amount_counter == 0;
                 }
             }
-            else 
+            else
             {
                 // Detect who the person is
                 int id = -1;
                 double confidence = 0.0;
-                model->predict(processedImage, id, confidence);
+                model->predict(processed_image, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
-
+                // Replace this part with writing to database when we get to there
                 if (confidence > confidence_limit)
                 {
 
                     // Unknown face
                     history.push_front(-1);
-                    history.pop_back(); 
+                    history.pop_back();
                     // These are done before after calculating most_common
                     // stmt->execute("DELETE FROM " + table + " WHERE id=2");
                     //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
                     cout << "Not recognized, status: 0" << endl;
                 }
-                else {
+                else
+                {
 
                     // Recognized
                     history.push_front(id);
@@ -354,6 +409,9 @@ int main(int argc, const char **argv)
                     // stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
                     cout << "Recognized, status: 1, person:" + std::to_string(id) + ", confidence: " + std::to_string(confidence) << endl;
                 }
+                auto finish = std::chrono::high_resolution_clock::now();
+                double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000.0;
+                cout << "Total duration:" + std::to_string(std::round(duration)) + "ms" << endl;
             }
         }
     }
@@ -391,11 +449,11 @@ int main(int argc, const char **argv)
             {
 
                 int id = c - 48; // convert ascii to numbers
-                Mat processedImage = prepareImage(croppedFace);
+                Mat processed_image = prepareImage(croppedFace);
                 if (!silent)
                 {
                     imshow("The face that would we teached", croppedFace);
-                    imshow("Processed version", processedImage);
+                    imshow("Processed version", processed_image);
                 }
                 cout << "Teach this with id " << std::to_string(id) << "?" << endl;
                 // Wait for the user to confirm the teaching, if space is pressed tech, otherwise discard
@@ -403,7 +461,7 @@ int main(int argc, const char **argv)
                 if (c2 == 32)
                 {
                     cout << "Teach face with id " << std::to_string(id) << endl;
-                    updateModel(processedImage, id);
+                    updateModel(processed_image, id);
                 }
                 else
                 {
@@ -413,10 +471,10 @@ int main(int argc, const char **argv)
             else if (c == 100) // letter d
             {
                 // Detect who the person is
-                Mat processedImage = prepareImage(croppedFace);
+                Mat processed_image = prepareImage(croppedFace);
                 int id = -1;
                 double confidence = 0.0;
-                model->predict(processedImage, id, confidence);
+                model->predict(processed_image, id, confidence);
                 string resultMessage = format("Predicted class = %02d / Confidence = %.0f ", id, confidence);
                 cout << resultMessage << endl;
             }
@@ -483,6 +541,7 @@ int main(int argc, const char **argv)
 vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
                            CascadeClassifier &nestedCascade,
                            double scale, bool tryflip)
+
 {
     double t = 0;
     vector<Rect> faces, faces2;
@@ -497,26 +556,46 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
             Scalar(0, 0, 255),
             Scalar(255, 0, 255)};
     Mat gray, smallImg;
-    cvtColor(img, gray, COLOR_BGR2GRAY);
+    if (img.channels() != 1)
+    {
+        cvtColor(img, gray, COLOR_BGR2GRAY); // Kaatuu tässä
+    }
+    else
+    {
+        gray = img;
+    }
+    /* Size tmp_size = gray.size();
+    if(tmp_size.height/min_height < scale)
+    {
+        scale = 1.0*tmp_size.height/min_height;
+    }
+    else if(tmp_size.width/min_width < scale)
+    {
+        scale = 1.0*tmp_size.width/min_width;
+    } */
+
     double fx = 1 / scale;
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
     equalizeHist(smallImg, smallImg);
     t = (double)getTickCount();
 
     cascade.detectMultiScale(smallImg, faces,
-                             1.1, 2, 0
-                             //|CASCADE_FIND_BIGGEST_OBJECT
-                             //|CASCADE_DO_ROUGH_SEARCH
-                             | CASCADE_SCALE_IMAGE,
+                             1.05, // scalefactor
+                             2,    // Min neighbors
+                             0
+                                 //|CASCADE_FIND_BIGGEST_OBJECT
+                                 //|CASCADE_DO_ROUGH_SEARCH
+                                 | CASCADE_SCALE_IMAGE,
+
                              Size(30, 30));
     if (tryflip)
     {
         flip(smallImg, smallImg, 1);
         cascade.detectMultiScale(smallImg, faces2,
-                                 1.1, 2, 0
-                                 //|CASCADE_FIND_BIGGEST_OBJECT
-                                 //|CASCADE_DO_ROUGH_SEARCH
-                                 | CASCADE_SCALE_IMAGE,
+                                 1.05, 2, 0
+                                              //|CASCADE_FIND_BIGGEST_OBJECT
+                                              //|CASCADE_DO_ROUGH_SEARCH
+                                              | CASCADE_SCALE_IMAGE,
                                  Size(30, 30));
         for (vector<Rect>::const_iterator r = faces2.begin(); r != faces2.end(); ++r)
         {
@@ -548,33 +627,6 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
                 imshow("Largest face", croppedFace);
             }
         }
-        //imshow("Face" + std::std::to_string(i), croppedFace);
-
-        rectangle(img, Point(cvRound(r.x * scale), cvRound(r.y * scale)),
-                  Point(cvRound((r.x + r.width - 1) * scale), cvRound((r.y + r.height - 1) * scale)),
-                  color, 3, 8, 0);
-
-        // This part can be used to detect objects (for example eyes) inside the objects
-        /*
-        if( nestedCascade.empty() )
-            continue;
-        smallImgROI = smallImg( r );
-        nestedCascade.detectMultiScale( smallImgROI, nestedObjects,
-            1.1, 2, 0
-            //|CASCADE_FIND_BIGGEST_OBJECT
-            //|CASCADE_DO_ROUGH_SEARCH
-            //|CASCADE_DO_CANNY_PRUNING
-            |CASCADE_SCALE_IMAGE,
-            Size(30, 30) );
-        for ( size_t j = 0; j < nestedObjects.size(); j++ )
-        {
-            Rect nr = nestedObjects[j];
-            center.x = cvRound((r.x + nr.x + nr.width*0.5)*scale);
-            center.y = cvRound((r.y + nr.y + nr.height*0.5)*scale);
-            radius = cvRound((nr.width + nr.height)*0.25*scale);
-            circle( img, center, radius, color, 3, 8, 0 );
-        }
-        */
     }
     if (!silent)
     {
@@ -602,8 +654,28 @@ Mat prepareImage(Mat image)
     Mat processedImg;
 
     image.copyTo(processedImg);
-    cvtColor(image, processedImg, COLOR_BGR2GRAY);
-    equalizeHist(processedImg, processedImg); // Does this work as intended? Should the output image be different?
+    if (image.channels() != 1)
+    {
+        cvtColor(image, processedImg, COLOR_BGR2GRAY);
+    }
+    else
+    {
+        processedImg = image;
+    }
+    if (demo)
+    {
+        imwrite("demo_gray.jpg", processedImg);
+    }
+    resize(processedImg, processedImg, Size(), 1, 1, INTER_LINEAR_EXACT);
+    if (demo)
+    {
+        imwrite("demo_gray_resized.jpg", processedImg);
+    }
+    equalizeHist(processedImg, processedImg);
+    if (demo)
+    {
+        imwrite("demo_final.jpg", processedImg);
+    }
     return processedImg;
 }
 
@@ -631,7 +703,6 @@ static void readCsv(const string &filename, vector<Mat> &images, vector<int> &la
 
 static void loadModel()
 {
-    // TODO: Check if exists already, if so, load it and do not create new
     std::ifstream file;
     file.open(modelFile); //Load model file
     if (file)
@@ -672,18 +743,23 @@ static double predictConfidence(Mat image, int predictedLabel)
     return confidence;
 }
 
-// For teting purposes, I bet you didn't guess that
+// For testing purposes, I bet you didn't guess that
 static void test(string trainCsv, string testCsv)
 {
     // Get the path to your CSV.
     string fnCsv = trainCsv;
     string fnTestCsv = testCsv;
+
     // These vectors hold the images and corresponding labels.
     vector<Mat> images;
     vector<int> labels;
     vector<Mat> testImages;
     vector<int> testLabels;
-    // Read in the data. This can fail if no valid
+
+    // Initiate history
+    std::deque<int> history;
+
+    // Read in the training data. This can fail if no valid
     // input filename is given.
     try
     {
@@ -715,38 +791,177 @@ static void test(string trainCsv, string testCsv)
     // Get the height from the first image. We'll need this
     // later in code to reshape the images to their original
     // size:
-    int height = images[0].rows;
-
+    int missedFaces = 0;
+    int totalFaces = images.size();
+    double progress = 0.0;
+    cout << format("Starting to teach %d images.", totalFaces) << endl;
     for (int i = 0; i < images.size(); i++)
     {
-        updateModel(images[i], labels[i]);
+        progress = 1.0 * i / totalFaces * 100;
+        cout << "\r" << format("Training progress: %.1f%", progress) << std::flush;
+        Mat frame1 = images[i];
+        Mat largestFace;
+        vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+        Rect largestRect = getLargestRect(images);
+        frame1.copyTo(largestFace);
+        if (largestRect.width <= 0)
+        {
+            missedFaces++;
+            cout << "No face found." << endl;
+            continue;
+        }
+
+        double fixed_scale;
+
+        fixed_scale = scale;
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
+
+        updateModel(croppedFace, labels[i]);
     }
+    cout << endl;
+
+    // Training done, let's start testing
     int correct = 0;
     int wrong = 0;
     double elapsed = 0;
+    int totalTestImages = testImages.size();
+    int totalPersons = 0;
+    int lastPerson = -1;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    int count = 0;
     for (int i = 0; i < testImages.size(); i++)
     {
+        if (testLabels[i] != testLabels[i + 1])
+        {
+            count++;
+        }
+        progress = 1.0 * i / totalTestImages * 100;
+        cout << "\r" << format("Testing progress: %.1f%", progress) << std::flush;
+
         int predictedLabel = -1;
         double confidence = 0.0;
-        auto start = std::chrono::high_resolution_clock::now();
-        predictedLabel = predictFace(testImages[i]);
-        confidence = predictConfidence(testImages[i], predictedLabel);
-        auto finish = std::chrono::high_resolution_clock::now();
-        double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
 
-        string resultMessage = format("Predicted class = %02d / Actual class = %02d / Confidence = %.0f / Time =  %.4fs", predictedLabel, testLabels[i], confidence, duration);
-        if (predictedLabel == testLabels[i])
+        if ((testLabels[i] != testLabels[i - 1]) || (single))
         {
-            correct++;
+            start = std::chrono::high_resolution_clock::now();
         }
-        else
+
+        Mat frame1 = testImages[i];
+        Mat largestFace;
+        vector<Rect> images = detectAndDraw(frame1, cascade, nestedCascade, scale, tryflip);
+        Rect largestRect = getLargestRect(images);
+        frame1.copyTo(largestFace);
+        if (largestRect.width <= 0)
         {
-            wrong++;
+            //cout << "No face found" << endl;
+            history.push_front(0);
+            if (testLabels[i] == testLabels[i + 1])
+            {
+                continue;
+            }
+            else
+            {
+                auto finish = std::chrono::high_resolution_clock::now();
+                double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
+
+                int max = 0;
+                int most_common = -1;
+                std::map<int, int> m;
+                for (auto vi = history.begin(); vi != history.end(); vi++)
+                {
+                    m[*vi]++;
+                    if (m[*vi] > max)
+                    {
+                        max = m[*vi];
+                        most_common = *vi;
+                    }
+                }
+
+                if (most_common == testLabels[i])
+                {
+                    correct++;
+                }
+                else
+                {
+                    wrong++;
+                }
+
+                string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
+                elapsed += duration;
+                cout << resultMessage << endl;
+                history.clear();
+                continue;
+            }
         }
-        elapsed += duration;
-        cout << resultMessage << endl;
+        double fixed_scale;
+        
+        fixed_scale = scale;
+        Mat croppedFace(largestFace, Rect(cvRound(largestRect.x * fixed_scale), cvRound(largestRect.y * fixed_scale), largestRect.width * fixed_scale - 1, largestRect.height * fixed_scale - 1));
+
+        predictedLabel = predictFace(croppedFace);
+        history.push_front(predictedLabel);
+        confidence = predictConfidence(croppedFace, predictedLabel);
+
+        if ((testLabels[i] != testLabels[i + 1]) || (single))
+        {
+            auto finish = std::chrono::high_resolution_clock::now();
+            double duration = (std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count()) / 1000000.0;
+
+            int max = 0;
+            int most_common = -1;
+            std::map<int, int> m;
+            for (auto vi = history.begin(); vi != history.end(); vi++)
+            {
+                m[*vi]++;
+                if (m[*vi] > max)
+                {
+                    max = m[*vi];
+                    most_common = *vi;
+                }
+            }
+
+            if (most_common == testLabels[i])
+            {
+                correct++;
+            }
+            else
+            {
+                wrong++;
+            }
+
+            string resultMessage = format("Predicted class = %02d / Actual class = %02d / Time =  %.4fs / Current accuracy = %.2f%% ", most_common, testLabels[i], duration, 1.0 * correct / (correct + wrong) * 100);
+            elapsed += duration;
+            cout << resultMessage << endl;
+            history.clear();
+        }
     }
     double accuracy = 1.0 * correct / (correct + wrong) * 100;
     double averageFps = testImages.size() / elapsed;
-    cout << format("Correct: %d / Wrong: %d / Accuracy: %.2f%% / FPS: %.2f", correct, wrong, accuracy, averageFps) << endl;
+    double face_detect_accuracy = 1.0 * (totalFaces - missedFaces) / totalFaces * 100;
+    cout << format("\nCorrect: %d / Wrong: %d / Sum: %d / Test image count: %d / Accuracy: %.2f%% / Detect Accuracy: %.2f%% / FPS: %.2f", correct, wrong, correct + wrong, count, accuracy, face_detect_accuracy, averageFps) << endl;
+    cout << format("Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d / Dataset: %s \n\n", radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str()) << endl;
+    bool first = 1;
+    std::string line;
+    // Chech if log is empty, if so print "headline"
+
+    std::ifstream log_csv_test("log.csv", std::ios::in);
+
+    if (std::getline(log_csv_test, line))
+    {
+        first = 0;
+    }
+    log_csv_test.close();
+
+    std::ofstream log_csv("log.csv", std::ios::app);
+    std::ofstream log_file("log.txt", std::ios::app);
+
+    if (first)
+    {
+        log_csv << format("Correct;Wrong;Test image count;Accuracy;Detect Accuracy;FPS;Radius;Neighbours;Scale;Cascade;Single;Dataset\n");
+    }
+    log_file << format("Correct: %d / Wrong: %d / Test image count: %d / Accuracy: %.4f / Detect Accuracy: %.4f / FPS: %.2f / Radius: %d / Neighbours: %d / Scale: %.1f / Cascade: %s / Single: %d / Dataset: %s \n", correct, wrong, count, accuracy / 100, face_detect_accuracy / 100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str());
+    log_csv << format("%d;%d;%d;%.4f;%.4f;%.2f;%d;%d;%.1f;%s;%d;%s\n", correct, wrong, count, accuracy / 100, face_detect_accuracy / 100, averageFps, radius, neighbours, scale, cascadeName.c_str(), single, dataset.c_str());
+    log_csv.close();
+    log_file.close();
 }
