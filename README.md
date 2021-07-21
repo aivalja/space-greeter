@@ -33,3 +33,9 @@ If empty model, crashes
 
 mysql connector legacy version 1.1
 
+
+**User interface setup**
+1. Install PHP and XAMPP or similar program to run Apache and MySQL modules. XAMPP Control panel v3.2.4, PHP 7.3.14 and Apache 2.4.38 has been proven to work
+2. Move to all the files in the UI folder to XAMPP's htdocs folder.
+3. The PHP files have hard coded variables in the beginning, such as database's password and username. Change them if needed.
+4. Run XAMPP's Apache and MySQL modules and the user interface should be seen in localhost/the folder name that holds the UI files
