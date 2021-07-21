@@ -92,6 +92,7 @@ int neighbours;
 int min_width;
 int min_height;
 double confidence_limit = 30;
+int history_length = 5;
 bool silent = false;
 bool demo = false;
 bool single = false;
@@ -103,6 +104,34 @@ sql::Statement *stmt;
 sql::ResultSet *res;
 int main(int argc, const char **argv)
 {
+    try {
+        
+
+        /* Create a connection */
+        driver = get_driver_instance();
+        con = driver->connect("tcp://127.0.0.1:3306", database_user, database_password);
+        /* Connect to the MySQL database */
+        //con->setSchema("recog");
+
+        stmt = con->createStatement();
+        stmt->execute("USE " + database);
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+        stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 42)");
+        res = stmt->executeQuery("SELECT status FROM " + table + " WHERE id=0");
+        while (res->next()) {
+            cout << res->getString("status") << endl;
+        }
+        delete res;
+        stmt->execute("DELETE FROM " + table + " WHERE id=0");
+        
+
+    } catch (sql::SQLException &e) {
+        cout << "# ERR: SQLException in " << __FILE__;
+        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+        cout << "# ERR: " << e.what();
+        cout << " (MySQL error code: " << e.getErrorCode();
+        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+    }
 
     
     Mat frame, image;
@@ -253,6 +282,13 @@ int main(int argc, const char **argv)
     int person_id = 0;
     if (parser.has("scan") && capture.isOpened())
     {
+        // Initiate history with zeroes (no face detected)
+        std::deque<int> history;
+        for (int i = 0; i < history_length; i++)
+        {
+            history.push_front(0);
+        }
+
         cout << "Scanning started" << endl;
         for (;;)
         {
@@ -271,15 +307,43 @@ int main(int argc, const char **argv)
                     }
                 }
             }
+            int max = 0;
+            int most_common = -1;
+            std::map<int,int> m;
+            for (auto vi = history.begin(); vi != history.end(); vi++) {
+                m[*vi]++;
+                if (m[*vi] > max) {
+                    max = m[*vi]; 
+                    most_common = *vi;
+                }
+            }
+
+            cout << format("Median detection past %d images is %d", history.size(), most_common) << endl;
             capture >> frame;
             auto start = std::chrono::high_resolution_clock::now();
-            if (frame.empty())
+            if (most_common == 0)
             {
-                break;
+                stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
             }
+            else if (most_common == -1)
+            {
+                stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
+
+            }
+            else if (most_common > 0)
+            {
+                stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                // This one has confidence, how to calculate it?
+                //stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(most_common) + ", " + std::to_string(confidence) + ", 1)");
+                stmt->execute("INSERT INTO " + table + "(id, person_id, status) VALUES (2, " + std::to_string(most_common)+ ", 1)");
+            
+            }
+
+
             // Check whether the person in frame should be taught to the model
-            res = stmt->executeQuery("SELECT person_id FROM "
-                                    + table + " WHERE id=1");
+            res = stmt->executeQuery("SELECT person_id FROM " + table + " WHERE id=1");
             while (res->next()) {
                 int temp_counter = photo_delay;
                 while(temp_counter > 0){
@@ -301,8 +365,12 @@ int main(int argc, const char **argv)
             frame1.copyTo(largestFace);
             if (largestRect.width <= 0)
             {
-                stmt->execute("DELETE FROM " + table + " WHERE id=0");
-                stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
+                // No faces detected
+                history.push_front(0);
+                history.pop_back();
+                // These are done before after calculating most_common
+                // stmt->execute("DELETE FROM " + table + " WHERE id=0");
+                // stmt->execute("INSERT INTO " + table + "(id, status) VALUES (0, 0)");
                 cout << "." << std::flush;
                 continue;
             }
@@ -345,13 +413,23 @@ int main(int argc, const char **argv)
                 // Replace this part with writing to database when we get to there
                 if (confidence > confidence_limit)
                 {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
-                    stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
+
+                    // Unknown face
+                    history.push_front(-1);
+                    history.pop_back(); 
+                    // These are done before after calculating most_common
+                    // stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                    //stmt->execute("INSERT INTO " + table + "(id, status) VALUES (2, 0)");
                     cout << "Not recognized, status: 0" << endl;
                 }
                 else {
-                    stmt->execute("DELETE FROM " + table + " WHERE id=2");
-                    stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
+
+                    // Recognized
+                    history.push_front(id);
+                    history.pop_back();
+                    // These are done before after calculating most_common
+                    // stmt->execute("DELETE FROM " + table + " WHERE id=2");
+                    // stmt->execute("INSERT INTO " + table + "(id, person_id, confidence, status) VALUES (2, " + std::to_string(id) + ", " + std::to_string(confidence) + ", 1)");
                     cout << "Recognized, status: 1, person:" + std::to_string(id) + ", confidence: " + std::to_string(confidence) << endl;
                 }
                 auto finish = std::chrono::high_resolution_clock::now();
@@ -522,6 +600,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR_EXACT);
     equalizeHist(smallImg, smallImg);
     t = (double)getTickCount();
+
     cascade.detectMultiScale(smallImg, faces,
                             1.05, // scalefactor
                             2,   // Min neighbors
@@ -547,6 +626,7 @@ vector<Rect> detectAndDraw(Mat &img, CascadeClassifier &cascade,
     }
     t = (double)getTickCount() - t;
     // printf( "detection time = %g ms\n", t*1000/getTickFrequency());
+
     Mat cleanImg, largestFace;
     img.copyTo(cleanImg);
     Rect largestRect = getLargestRect(faces);
@@ -741,7 +821,6 @@ static void test(string trainCsv, string testCsv)
         // nothing more we can do
         exit(1);
     }
-
     // Read in the test data
     try
     {
@@ -753,14 +832,12 @@ static void test(string trainCsv, string testCsv)
         // nothing more we can do
         exit(1);
     }
-
     // Quit if there are not enough images for this demo.
     if (images.size() < 1)
     {
         string errorMessage = "This demo needs at least 1 image to work. Please add more images to your data set!";
         CV_Error(Error::StsError, errorMessage);
     }
-
     // Get the height from the first image. We'll need this
     // later in code to reshape the images to their original
     // size:
