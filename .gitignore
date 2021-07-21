@@ -5,3 +5,8 @@
 #Output files
 output/
 .vscode/
+.Rproj.user
+space-greeter.Rproj
+.RData
+.Rhistory
+*.csv

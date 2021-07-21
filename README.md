@@ -8,6 +8,15 @@ g++ faceDetect.cpp -g -I /usr/local/include/opencv4/ -lopencv_gapi -lopencv_stit
 
 ./detect.o 2 --cascade=lbpcascades/lbpcascade_frontalface.xml --scale=1 --test --train-csv=train.csv --test-csv=test.csv
 
+To run tests:
+
+Use data sorter to put water training and test sets from FERET to train.csv and test.csv respectively
+Train always with fa-set, test with others
+
+using data-sorter.py:
+python data-sorter.py /home/anssi/FERET/colorferet/dvd1/data/images/ /home/anssi/FERET/colorferet/dvd1/doc/partitions/fb.txt > test.csv
+
+
 ```
 
 While running:
@@ -20,7 +29,6 @@ If cannot stream image over ssh, sudo su and
 xauth merge /home/aiva/.Xauthority
 
 Todo:
-Check if squares are seen in teaching images
 If empty model, crashes
 
 mysql connector legacy version 1.1
