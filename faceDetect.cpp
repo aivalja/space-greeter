@@ -91,7 +91,7 @@ int radius;
 int neighbours;
 int min_width;
 int min_height;
-double confidence_limit = 30;
+double confidence_limit = 1000;
 int history_length = 5;
 bool silent = false;
 bool demo = false;
